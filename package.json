@@ -1,0 +1,32 @@
+{
+  "name": "upbit-trading",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/rmfpdlxmtidl/upbit-trading.git",
+  "author": "Taeuk Gwak <gwak2837@kakao.com>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "NODE_ENV=development nodemon -r dotenv/config src/index.ts --trace-warnings",
+    "build": "rm -rf dist && tsc",
+    "start": "NODE_ENV=production node -r dotenv/config dist/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "jsonwebtoken": "^8.5.1",
+    "node-fetch": "^3.0.0",
+    "request": "^2.88.2",
+    "technicalindicators": "^3.1.0",
+    "uuid": "^8.3.2",
+    "ws": "^8.2.2"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^8.5.5",
+    "@types/node": "^16.10.1",
+    "@types/request": "^2.48.7",
+    "@types/uuid": "^8.3.1",
+    "@types/ws": "^8",
+    "nodemon": "^2.0.13",
+    "ts-node": "^10.2.1",
+    "typescript": "^4.4.3"
+  }
+}
