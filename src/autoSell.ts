@@ -34,7 +34,7 @@ const uuidWriter = fs.createWriteStream('docs/auto-sell.txt', { flags: 'a' }).on
         const newOrder = !uuids.includes(order.uuid)
 
         if (buyingOrder && inLastHour && newOrder) {
-          const response = await orderCoin({
+          const buyingOrderResult = await orderCoin({
             market: order.market,
             ord_type: 'limit',
             side: 'ask',
@@ -42,9 +42,9 @@ const uuidWriter = fs.createWriteStream('docs/auto-sell.txt', { flags: 'a' }).on
             volume: order.volume,
           })
 
-          logWriter.write(`${new Date().toLocaleString()} ${JSON.stringify(response)}\n`)
+          logWriter.write(`${new Date().toLocaleString()} ${JSON.stringify(buyingOrderResult)}\n`)
 
-          if (response.uuid) {
+          if (buyingOrderResult.uuid) {
             uuidWriter.write(`${order.uuid}\n`)
             uuids.push(order.uuid)
           }
