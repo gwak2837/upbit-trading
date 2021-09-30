@@ -1,7 +1,7 @@
 import WebSocket from 'ws'
 
 import { arrayMax, arrayMin, arraySumation } from './utils/common'
-import { cci, mfi, rsi } from './utils/indicator'
+import { cci, mfi, rsi, willliamsR } from './utils/indicator'
 import { TICK_INTERVAL, upbitWebSocketRequestOption } from './utils/options'
 import { ceilUpbitPrice, getOrder, order } from './utils/upbit'
 import { logWriter, tickWriter } from './utils/writer'
@@ -52,6 +52,7 @@ ws.on('message', (data) => {
       mfi: mfi.nextValue(newTick) ?? 0,
       rsi: rsi.nextValue(tick.tp) ?? 0,
       cci: Math.round((cci.nextValue(newTick) ?? 0) * 100) / 100,
+      willliamsR: Math.round((willliamsR.nextValue(newTick as any) ?? 0) * 100) / 100,
     }
 
     results.push(newResult)
@@ -69,6 +70,7 @@ ws.on('message', (data) => {
         newResult.mfi,
         newResult.rsi,
         newResult.cci,
+        newResult.willliamsR,
       ].join(',') + '\n'
     )
   }

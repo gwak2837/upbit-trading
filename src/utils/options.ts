@@ -16,7 +16,7 @@ export const upbitWebSocketRequestOption = [
   },
 ]
 
-export const TICK_INTERVAL = 60
+export const TICK_INTERVAL = 3
 
 export const MFI_PERIOD = 14
 export const RSI_PERIOD = 14
