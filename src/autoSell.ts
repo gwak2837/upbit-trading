@@ -2,6 +2,7 @@ import fs from 'fs'
 
 import { ceilUpbitPrice, getOrders, order as orderCoin } from './upbit'
 import { sleep } from './utils/common'
+import { AUTO_SELLING_RATIO } from './utils/options'
 import { logWriter } from './writer'
 
 const uuids = fs.readFileSync('docs/auto-sell.txt', 'utf8').split('\n')
@@ -38,7 +39,7 @@ const uuidWriter = fs.createWriteStream('docs/auto-sell.txt', { flags: 'a' }).on
             market: order.market,
             ord_type: 'limit',
             side: 'ask',
-            price: `${ceilUpbitPrice(+order.price * 1.002)}`,
+            price: `${ceilUpbitPrice(+order.price * AUTO_SELLING_RATIO)}`,
             volume: order.volume,
           })
 
