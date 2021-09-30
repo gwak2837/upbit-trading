@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chart</title>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.5.1/chart.min.js"
+      integrity="sha512-Wt1bJGtlnMtGP0dqNFH1xlkLBNpEodaiQ8ZN5JLA5wpc1sUlk/O5uuOMNgvzddzkpvZ9GLyYNa8w2s7rqiTk5Q=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+  </head>
+  <body>
+    <input type="file" name="inputfile" id="inputfile" />
+    <canvas id="price" width="400" height="100"></canvas>
+    <canvas id="mfi" width="400" height="100"></canvas>
+    <canvas id="rsi" width="400" height="100"></canvas>
+    <canvas id="cci" width="400" height="100"></canvas>
+
+    <script>
+      const CHART_COLORS = {
+        red: 'rgb(255, 99, 132)',
+        orange: 'rgb(255, 159, 64)',
+        yellow: 'rgb(255, 205, 86)',
+        green: 'rgb(75, 192, 192)',
+        blue: 'rgb(54, 162, 235)',
+        purple: 'rgb(153, 102, 255)',
+        grey: 'rgb(201, 203, 207)',
+      }
+
+      const CHART_BACKGROUND_COLORS = {
+        red: 'rgba(255, 99, 132, 0.5)',
+        orange: 'rgba(255, 159, 64, 0.5)',
+        yellow: 'rgba(255, 205, 86, 0.5)',
+        green: 'rgba(75, 192, 192, 0.5)',
+        blue: 'rgba(54, 162, 235, 0.5)',
+        purple: 'rgba(153, 102, 255, 0.5)',
+        grey: 'rgba(201, 203, 207, 0.5)',
+      }
+
+      function getChart(ctx, dataName, dataArray, borderColor, backgroundColor) {
+        return new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: [...new Array(dataArray.length)].map((_, i) => i + 1),
+            datasets: [
+              {
+                label: dataName,
+                data: dataArray,
+                borderColor,
+                backgroundColor,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'top',
+              },
+            },
+          },
+        })
+      }
+
+      let chart1, chart2, chart3, chart4
+
+      document.getElementById('inputfile').addEventListener('change', function () {
+        const fileReader = new FileReader()
+
+        fileReader.onload = function () {
+          if (chart1) chart1.destroy()
+          if (chart2) chart2.destroy()
+          if (chart3) chart3.destroy()
+          if (chart4) chart4.destroy()
+
+          const lines = this.result
+            .split('\n')
+            .slice(1)
+            .map((line) => line.split(','))
+
+          const prices = lines.map((line) => line[3])
+          const mfis = lines.map((line) => line[5])
+          const rsis = lines.map((line) => line[6])
+          const ccis = lines.map((line) => line[7])
+
+          chart1 = getChart(
+            document.getElementById('price').getContext('2d'),
+            'price',
+            prices,
+            CHART_COLORS.red,
+            CHART_BACKGROUND_COLORS.red
+          )
+
+          chart2 = getChart(
+            document.getElementById('mfi').getContext('2d'),
+            'MFI',
+            mfis,
+            CHART_COLORS.blue,
+            CHART_BACKGROUND_COLORS.blue
+          )
+
+          chart3 = getChart(
+            document.getElementById('rsi').getContext('2d'),
+            'RSI',
+            rsis,
+            CHART_COLORS.green,
+            CHART_BACKGROUND_COLORS.green
+          )
+
+          chart4 = getChart(
+            document.getElementById('cci').getContext('2d'),
+            'CCI',
+            ccis,
+            CHART_COLORS.orange,
+            CHART_BACKGROUND_COLORS.orange
+          )
+        }
+
+        fileReader.readAsText(this.files[0])
+      })
+    </script>
+  </body>
+</html>
