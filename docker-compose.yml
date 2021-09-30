@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  server:
+    build: .
+    container_name: server
+    env_file:
+      - .env
+    restart: always
+    ports:
+      - $PORT:$PORT
