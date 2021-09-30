@@ -38,7 +38,7 @@ export function order(body: OrderBody) {
     json: body,
   }
 
-  return new Promise<UpbitOrder>((resolve, reject) => {
+  return new Promise<UpbitOrder & UpbitError>((resolve, reject) => {
     request(options, (error, __, body) => {
       if (error) reject(error)
       resolve(body)

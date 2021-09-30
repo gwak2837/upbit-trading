@@ -7,9 +7,10 @@
   "license": "MIT",
   "scripts": {
     "dev": "NODE_ENV=development nodemon -r dotenv/config src/index.ts --trace-warnings",
+    "sell-dev": "NODE_ENV=development nodemon -r dotenv/config src/sell.ts --trace-warnings",
     "build": "rm -rf dist && tsc",
     "start": "NODE_ENV=production node -r dotenv/config dist/index.js",
-    "start-sell": "NODE_ENV=production node -r dotenv/config dist/autoSell.js",
+    "sell-start": "NODE_ENV=production node -r dotenv/config dist/sell.js",
     "test": "NODE_ENV=test ts-node -r dotenv/config test/index.ts"
   },
   "dependencies": {

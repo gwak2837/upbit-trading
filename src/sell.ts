@@ -5,9 +5,14 @@ import { AUTO_SELLING_RATIO } from './utils/options'
 import { ceilUpbitPrice, getOrders, order as orderCoin } from './utils/upbit'
 import { logWriter } from './utils/writer'
 
-const uuids = fs.readFileSync('docs/auto-sell.txt', 'utf8').split('\n')
+const uuids = fs
+  .readFileSync('docs/uuid.txt', {
+    encoding: 'utf8',
+    flag: 'a+',
+  })
+  .split('\n')
 
-const uuidWriter = fs.createWriteStream('docs/auto-sell.txt', { flags: 'a' }).on('finish', () => {
+const uuidWriter = fs.createWriteStream('docs/uuid.txt', { flags: 'a' }).on('finish', () => {
   console.log('finish')
 })
 
@@ -45,18 +50,16 @@ const uuidWriter = fs.createWriteStream('docs/auto-sell.txt', { flags: 'a' }).on
 
           logWriter.write(`${new Date().toLocaleString()} ${JSON.stringify(buyingOrderResult)}\n`)
 
-          if (buyingOrderResult.uuid) {
+          if (buyingOrderResult.uuid || buyingOrderResult.error.name === 'insufficient_funds_ask') {
             uuidWriter.write(`${order.uuid}\n`)
             uuids.push(order.uuid)
-          } else {
-            console.log(order.uuid, buyingOrderResult)
           }
 
-          await sleep(500)
+          await sleep(1000)
         }
       })
 
-      await sleep(3000)
+      await sleep(2000)
     } catch (error) {
       console.log(new Date().toLocaleString(), error)
       await sleep(5000)
