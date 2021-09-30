@@ -8,7 +8,7 @@ export const upbitWebSocketRequestOption = [
   },
   {
     type: 'ticker',
-    codes: ['KRW-OMG'],
+    codes: ['KRW-BTC'],
     isOnlyRealtime: true,
   },
   {
@@ -16,10 +16,18 @@ export const upbitWebSocketRequestOption = [
   },
 ]
 
-export const TICK_INTERVAL = 3
+export const TICK_INTERVAL = 60
 
 export const MFI_PERIOD = 14
+export const MFI_BUYING_SIGNAL = 20
+
 export const RSI_PERIOD = 14
+export const RSI_BUYING_SIGNAL = 25
+
 export const CCI_PERIOD = 14
+export const CCI_BUYING_SIGNAL = -150
+
+export const WILLIAMSR_PERIOD = 14
+export const WILLIAMSR_BUYING_SIGNAL = 14
 
 export const AUTO_SELLING_RATIO = 1.002
