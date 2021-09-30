@@ -48,6 +48,8 @@ const uuidWriter = fs.createWriteStream('docs/auto-sell.txt', { flags: 'a' }).on
           if (buyingOrderResult.uuid) {
             uuidWriter.write(`${order.uuid}\n`)
             uuids.push(order.uuid)
+          } else {
+            console.log(order.uuid, buyingOrderResult)
           }
 
           await sleep(500)
