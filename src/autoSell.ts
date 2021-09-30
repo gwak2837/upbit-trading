@@ -1,9 +1,9 @@
 import fs from 'fs'
 
-import { ceilUpbitPrice, getOrders, order as orderCoin } from './upbit'
 import { sleep } from './utils/common'
 import { AUTO_SELLING_RATIO } from './utils/options'
-import { logWriter } from './writer'
+import { ceilUpbitPrice, getOrders, order as orderCoin } from './utils/upbit'
+import { logWriter } from './utils/writer'
 
 const uuids = fs.readFileSync('docs/auto-sell.txt', 'utf8').split('\n')
 

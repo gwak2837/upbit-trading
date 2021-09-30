@@ -5,8 +5,8 @@ import { sign } from 'jsonwebtoken'
 import request from 'request'
 import { v4 as uuidv4 } from 'uuid'
 
-import { UpbitError, UpbitOrder, UpbitOrderDetail } from './types/upbit'
-import { ACCESS_KEY, SECRET_KEY, UPBIT_API_URL } from './utils/options'
+import { UpbitError, UpbitOrder, UpbitOrderDetail } from '../types/upbit'
+import { ACCESS_KEY, SECRET_KEY, UPBIT_API_URL } from './options'
 
 function createToken(query: string) {
   return sign(

@@ -1,7 +1,9 @@
 import fs from 'fs'
 
+import { TICK_INTERVAL } from './options'
+
 export const tickWriter = fs
-  .createWriteStream(`docs/tick-${new Date().toLocaleString()}.csv`)
+  .createWriteStream(`docs/tick-${TICK_INTERVAL}-${new Date().toLocaleString()}.csv`)
   .on('finish', () => {
     console.log('finish')
   })

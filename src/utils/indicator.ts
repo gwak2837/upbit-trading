@@ -1,6 +1,6 @@
 import { CCI, MFI, RSI } from 'technicalindicators'
 
-import { CCI_PERIOD, MFI_PERIOD, RSI_PERIOD } from './utils/options'
+import { CCI_PERIOD, MFI_PERIOD, RSI_PERIOD } from './options'
 
 export const mfi = new MFI({ high: [], low: [], close: [], volume: [], period: MFI_PERIOD })
 export const rsi = new RSI({ values: [], period: RSI_PERIOD })

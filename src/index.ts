@@ -1,10 +1,10 @@
 import WebSocket from 'ws'
 
-import { cci, mfi, rsi } from './indicator'
-import { ceilUpbitPrice, getOrder, order } from './upbit'
 import { arrayMax, arrayMin, arraySumation } from './utils/common'
+import { cci, mfi, rsi } from './utils/indicator'
 import { TICK_INTERVAL, upbitWebSocketRequestOption } from './utils/options'
-import { logWriter, tickWriter } from './writer'
+import { ceilUpbitPrice, getOrder, order } from './utils/upbit'
+import { logWriter, tickWriter } from './utils/writer'
 
 type Tick = {
   high: number
