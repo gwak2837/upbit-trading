@@ -6,7 +6,7 @@ import request from 'request'
 import { v4 as uuidv4 } from 'uuid'
 
 import { UpbitError, UpbitOrder, UpbitOrderDetail } from './types/upbit'
-import { ACCESS_KEY, SECRET_KEY, SERVER_URL } from './utils/options'
+import { ACCESS_KEY, SECRET_KEY, UPBIT_API_URL } from './utils/options'
 
 function createToken(query: string) {
   return sign(
@@ -33,7 +33,7 @@ export function order(body: OrderBody) {
 
   const options = {
     method: 'POST',
-    url: SERVER_URL + '/v1/orders',
+    url: UPBIT_API_URL + '/v1/orders',
     headers: { Authorization: `Bearer ${token}` },
     json: body,
   }
@@ -52,7 +52,7 @@ export function cancelOrder(uuid: string) {
 
   const options = {
     method: 'DELETE',
-    url: SERVER_URL + '/v1/order?' + query,
+    url: UPBIT_API_URL + '/v1/order?' + query,
     headers: { Authorization: `Bearer ${createToken(query)}` },
     json: body,
   }
@@ -71,7 +71,7 @@ export function getOrder(uuid: string) {
 
   const options = {
     method: 'GET',
-    url: SERVER_URL + '/v1/order?' + query,
+    url: UPBIT_API_URL + '/v1/order?' + query,
     headers: { Authorization: `Bearer ${createToken(query)}` },
     json: body,
   }
@@ -89,7 +89,7 @@ export function getOrders(body: any) {
 
   const options = {
     method: 'GET',
-    url: SERVER_URL + '/v1/orders?' + query,
+    url: UPBIT_API_URL + '/v1/orders?' + query,
     headers: { Authorization: `Bearer ${createToken(query)}` },
     json: body,
   }
