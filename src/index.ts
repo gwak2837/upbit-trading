@@ -6,16 +6,8 @@ import { TICK_INTERVAL, upbitWebSocketRequestOption } from './utils/options'
 import { ceilUpbitPrice, getOrder, order } from './utils/upbit'
 import { logWriter, tickWriter } from './utils/writer'
 
-type Tick = {
-  high: number
-  low: number
-  close: number
-  volume: number
-}
-
 const results = []
 
-let first = true
 let tickIth = 1
 const tempTicks = new Array()
 const tempVolumes = new Array()
