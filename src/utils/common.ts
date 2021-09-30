@@ -27,3 +27,13 @@ export function arrayMax(arr: number[]) {
 
   return max
 }
+
+export function arraySumation(arr: number[]) {
+  let result = 0
+
+  for (var i = arr.length; i--; ) {
+    result += arr[i]
+  }
+
+  return result
+}
