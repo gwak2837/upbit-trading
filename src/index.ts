@@ -9,7 +9,7 @@ import {
   upbitWebSocketRequestOption,
 } from './utils/options'
 import { ceilUpbitPrice, getOrder, order as orderCoin } from './utils/upbit'
-import { logWriter, tickWriter } from './utils/writer'
+import { buyingIndicatorWriter, logWriter, tickWriter } from './utils/writer'
 
 let tickIth = 1
 const tempTicks = new Array()
@@ -68,6 +68,7 @@ ws.on('message', async (data) => {
       })
 
       logWriter.write(`${printNow()} bid ${JSON.stringify(buyingOrderResult)}\n`)
+      buyingIndicatorWriter.write(`${printNow()} ${Object.values(newIndicator).join(',')}\n`)
 
       if (!buyingOrderResult.error) {
         const { trades } = await waitUntilOrderDone(buyingOrderResult.uuid)
