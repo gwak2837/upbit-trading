@@ -131,3 +131,4 @@ dist
 /docs/*
 !/docs/chart.html
 test
+src/utils/options.ts

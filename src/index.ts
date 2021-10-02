@@ -9,7 +9,7 @@ import {
   goodToBuy,
   upbitWebSocketRequestOption,
 } from './utils/options'
-import { buyingIndicatorWriter, logWriter, tickWriter } from './utils/writer'
+import { logWriter, tickWriter } from './utils/writer'
 
 let tickIth = 1
 const tempTicks = new Array()
@@ -59,7 +59,7 @@ ws.on('message', async (data) => {
 
     const buyingCondition = goodToBuy(prevIndicator, newIndicator)
 
-    if (buyingCondition) {
+    if (buyingCondition && buy) {
       const buyingOrderResult = await orderCoin({
         market: tick.cd,
         ord_type: 'price', // limit로 개선 필요
@@ -70,7 +70,6 @@ ws.on('message', async (data) => {
       })
 
       logWriter.write(`${printNow()} bid ${JSON.stringify(buyingOrderResult)}\n`)
-      buyingIndicatorWriter.write(`${printNow()} ${Object.values(newIndicator).join(',')}\n`)
 
       if (!buyingOrderResult.error) {
         const { trades } = await waitUntilOrderDone(buyingOrderResult.uuid)
