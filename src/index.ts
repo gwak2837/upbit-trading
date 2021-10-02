@@ -52,12 +52,14 @@ ws.on('message', async (data) => {
 
     const newIndicator = {
       rsi: rsi.nextValue(tick.tp) ?? 50,
-      mfi: mfi.nextValue(newTick) ?? 50,
       cci: Math.round((cci.nextValue(newTick) ?? 0) * 100) / 100,
+      mfi: mfi.nextValue(newTick) ?? 50,
       willliamsR: Math.round((willliamsR.nextValue(newTick as any) ?? -50) * 100) / 100,
     }
 
-    if (goodToBuy(prevIndicator, newIndicator)) {
+    const buyingCondition = goodToBuy(prevIndicator, newIndicator)
+
+    if (buyingCondition) {
       const buyingOrderResult = await orderCoin({
         market: tick.cd,
         ord_type: 'price', // limit로 개선 필요
@@ -91,19 +93,9 @@ ws.on('message', async (data) => {
     tempVolumes.length = 0
     prevIndicator = newIndicator
 
-    tickWriter.write(
-      [
-        newTick.open,
-        newTick.high,
-        newTick.low,
-        newTick.close,
-        newTick.volume,
-        newIndicator.rsi,
-        newIndicator.mfi,
-        newIndicator.cci,
-        newIndicator.willliamsR,
-      ].join(',') + '\n'
-    )
+    const tickLog = [printNow(), ...Object.values(newTick), ...Object.values(newIndicator)]
+    if (buyingCondition) tickLog.push('O')
+    tickWriter.write(tickLog.join(',') + '\n')
   }
 
   tickIth = ++tickIth <= TICK_INTERVAL ? tickIth : 1
