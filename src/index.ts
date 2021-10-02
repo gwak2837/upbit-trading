@@ -1,14 +1,14 @@
 import WebSocket from 'ws'
 
-import { arrayMax, arrayMin, arraySumation, printNow, sleep } from './utils/common'
-import { cci, mfi, rsi, willliamsR } from './utils/indicator'
+import { cci, mfi, rsi, willliamsR } from './lib/indicator'
+import { ceilUpbitPrice, getOrder, order as orderCoin } from './lib/upbit'
+import { arrayMax, arrayMin, arraySumation, printNow, sleep } from './utils'
 import {
   AUTO_SELLING_RATIO,
   TICK_INTERVAL,
   goodToBuy,
   upbitWebSocketRequestOption,
 } from './utils/options'
-import { ceilUpbitPrice, getOrder, order as orderCoin } from './utils/upbit'
 import { buyingIndicatorWriter, logWriter, tickWriter } from './utils/writer'
 
 let tickIth = 1

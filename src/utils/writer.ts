@@ -1,7 +1,7 @@
 import fs from 'fs'
 
-import { printNow } from './common'
 import { TICK_INTERVAL } from './options'
+import { printNow } from '.'
 
 export const tickWriter = fs
   .createWriteStream(`docs/${new Date().getTime()}-tick-${TICK_INTERVAL}.csv`)

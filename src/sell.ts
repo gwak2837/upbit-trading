@@ -1,8 +1,8 @@
 import fs from 'fs'
 
-import { sleep } from './utils/common'
+import { ceilUpbitPrice, getOrders, order as orderCoin } from './lib/upbit'
+import { sleep } from './utils'
 import { AUTO_SELLING_RATIO } from './utils/options'
-import { ceilUpbitPrice, getOrders, order as orderCoin } from './utils/upbit'
 import { logWriter } from './utils/writer'
 
 const uuids = fs
