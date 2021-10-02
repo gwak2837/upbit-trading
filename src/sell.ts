@@ -22,7 +22,7 @@ const uuidWriter = fs.createWriteStream('docs/uuid.txt', { flags: 'a' }).on('fin
   while (true) {
     try {
       const orders = await getOrders({
-        state: 'done',
+        state: ['done', 'cancel'],
         limit: 10,
       })
 
@@ -48,7 +48,9 @@ const uuidWriter = fs.createWriteStream('docs/uuid.txt', { flags: 'a' }).on('fin
             volume: order.volume,
           })
 
-          logWriter.write(`${new Date().toLocaleString()} ${JSON.stringify(buyingOrderResult)}\n`)
+          logWriter.write(
+            `${new Date().toLocaleString('ko-KR')} ${JSON.stringify(buyingOrderResult)}\n`
+          )
 
           if (buyingOrderResult.uuid || buyingOrderResult.error.name === 'insufficient_funds_ask') {
             uuidWriter.write(`${order.uuid}\n`)
