@@ -7,5 +7,5 @@ services:
     env_file:
       - .env
     restart: always
-    ports:
-      - $PORT:$PORT
+    volumes:
+      - './docs:/server/docs'

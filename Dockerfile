@@ -19,12 +19,11 @@ WORKDIR /server
 COPY .yarn/plugins .yarn/plugins
 COPY .yarn/releases .yarn/releases
 COPY .yarnrc.yml package.json yarn.lock ./
-COPY --from=builder /server/dist dist
 
 RUN yarn workspaces focus --production
 
-EXPOSE $PORT
+COPY --from=builder /server/dist dist
 
-ENTRYPOINT [ "yarn" ]
+ENTRYPOINT ["yarn"]
 
-CMD [ "start"]
+CMD ["start"]
