@@ -23,4 +23,4 @@ export const buyingIndicatorWriter = fs
     console.log(`${printNow()} finish`)
   })
 
-tickWriter.write('RSI,MFI,CCI,Williams%R\n')
+buyingIndicatorWriter.write('RSI,MFI,CCI,Williams%R\n')
