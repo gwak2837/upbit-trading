@@ -6,7 +6,44 @@ import request from 'request'
 import { v4 as uuidv4 } from 'uuid'
 
 import { UpbitError, UpbitOrder, UpbitOrderDetail } from '../types/upbit'
+import { sleep } from './common'
 import { ACCESS_KEY, SECRET_KEY, UPBIT_API_URL } from './options'
+
+class Waiter {
+  period = 500
+  paused = false
+
+  constructor(period?: number) {
+    if (period) this.period = period
+  }
+
+  async wait() {
+    while (this.paused) {
+      await sleep(this.period)
+    }
+  }
+
+  pause() {
+    this.paused = true
+
+    setTimeout(() => {
+      this.paused = false
+    }, this.period)
+  }
+}
+
+const waiter = new Waiter()
+
+async function requestToUpbitWithDelay<T>(options: request.RequiredUriUrl & request.CoreOptions) {
+  await waiter.wait()
+  return new Promise<T>((resolve, reject) => {
+    request(options, (error, __, body) => {
+      waiter.pause()
+      if (error) reject(error)
+      else resolve(body)
+    })
+  })
+}
 
 function createToken(query: string) {
   return sign(
@@ -22,8 +59,8 @@ function createToken(query: string) {
 
 type OrderBody = {
   market: string
-  ord_type: string
-  side: string
+  ord_type: 'limit' | 'price' | 'market'
+  side: 'bid' | 'ask'
   price?: string
   volume?: string
 }
@@ -38,12 +75,7 @@ export function order(body: OrderBody) {
     json: body,
   }
 
-  return new Promise<UpbitOrder & UpbitError>((resolve, reject) => {
-    request(options, (error, __, body) => {
-      if (error) reject(error)
-      resolve(body)
-    })
-  })
+  return requestToUpbitWithDelay<UpbitOrder & UpbitError>(options)
 }
 
 export function cancelOrder(uuid: string) {
@@ -57,12 +89,7 @@ export function cancelOrder(uuid: string) {
     json: body,
   }
 
-  return new Promise<Record<string, string>>((resolve, reject) => {
-    request(options, (error, __, body) => {
-      if (error) reject(error)
-      resolve(body)
-    })
-  })
+  return requestToUpbitWithDelay<Record<string, string>>(options)
 }
 
 export function getOrder(uuid: string) {
@@ -76,12 +103,7 @@ export function getOrder(uuid: string) {
     json: body,
   }
 
-  return new Promise<UpbitOrderDetail>((resolve, reject) => {
-    request(options, (error, __, body) => {
-      if (error) reject(error)
-      resolve(body)
-    })
-  })
+  return requestToUpbitWithDelay<UpbitOrderDetail>(options)
 }
 
 export function getOrders(body: any) {
@@ -94,12 +116,7 @@ export function getOrders(body: any) {
     json: body,
   }
 
-  return new Promise<UpbitOrderDetail[] & UpbitError>((resolve, reject) => {
-    request(options, (error, __, body) => {
-      if (error) reject(error)
-      resolve(body)
-    })
-  })
+  return requestToUpbitWithDelay<UpbitOrderDetail[] & UpbitError>(options)
 }
 
 export function ceilUpbitPrice(price: number) {
