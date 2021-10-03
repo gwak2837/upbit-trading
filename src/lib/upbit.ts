@@ -18,8 +18,13 @@ class Waiter {
   }
 
   async wait() {
+    let count = 100
     while (this.paused) {
       await sleep(this.period)
+      if (count-- < 0) {
+        this.paused = false
+        break
+      }
     }
   }
 
