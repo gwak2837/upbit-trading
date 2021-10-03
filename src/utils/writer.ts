@@ -11,7 +11,7 @@ export const tickWriter = fs
 
 // ${new Date().toLocaleString()}
 
-tickWriter.write('Time,Open,High,Low,Close,Volume,RSI,MFI,CCI,Williams%R,Buy\n')
+tickWriter.write('Time,Open,High,Low,Close,Volume,RSI,CCI,MFI,Williams%R,Buy\n')
 
 export const logWriter = fs.createWriteStream('docs/log.txt', { flags: 'a' }).on('finish', () => {
   console.log(`${printNow()} finish`)

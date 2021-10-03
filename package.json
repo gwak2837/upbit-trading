@@ -6,11 +6,12 @@
   "author": "Taeuk Gwak <gwak2837@kakao.com>",
   "license": "MIT",
   "scripts": {
+    "sell": "ts-node -r dotenv/config src/sell.ts --trace-warnings",
+    "orders": "ts-node -r dotenv/config src/orders.ts --trace-warnings",
+    "order": "ts-node -r dotenv/config src/order.ts --trace-warnings",
     "dev": "NODE_ENV=development nodemon -r dotenv/config src/index.ts --trace-warnings",
-    "sell-dev": "NODE_ENV=development nodemon -r dotenv/config src/sell.ts --trace-warnings",
     "build": "rm -rf dist && tsc",
     "start": "NODE_ENV=production node -r dotenv/config dist/index.js",
-    "sell-start": "NODE_ENV=production node -r dotenv/config dist/sell.js",
     "test": "NODE_ENV=test ts-node -r dotenv/config test/index.ts"
   },
   "dependencies": {
