@@ -66,30 +66,30 @@
         })
       }
 
-      let chart1, chart2, chart3, chart4, chart5
+      let priceChart, mfiChart, rsiChart, cciChart, williamsrChart
 
       document.getElementById('inputfile').addEventListener('change', function () {
         const fileReader = new FileReader()
 
         fileReader.onload = function () {
-          if (chart1) chart1.destroy()
-          if (chart2) chart2.destroy()
-          if (chart3) chart3.destroy()
-          if (chart4) chart4.destroy()
-          if (chart5) chart5.destroy()
+          if (priceChart) priceChart.destroy()
+          if (mfiChart) mfiChart.destroy()
+          if (rsiChart) rsiChart.destroy()
+          if (cciChart) cciChart.destroy()
+          if (williamsrChart) williamsrChart.destroy()
 
           const lines = this.result
             .split('\n')
             .slice(1)
             .map((line) => line.split(','))
 
-          const prices = lines.map((line) => line[3])
-          const mfis = lines.map((line) => line[5])
+          const prices = lines.map((line) => line[4])
           const rsis = lines.map((line) => line[6])
           const ccis = lines.map((line) => line[7])
-          const williamsRs = lines.map((line) => line[8])
+          const mfis = lines.map((line) => line[8])
+          const williamsRs = lines.map((line) => line[9])
 
-          chart1 = getChart(
+          priceChart = getChart(
             document.getElementById('price').getContext('2d'),
             'price',
             prices,
@@ -97,7 +97,7 @@
             CHART_BACKGROUND_COLORS.red
           )
 
-          chart2 = getChart(
+          mfiChart = getChart(
             document.getElementById('mfi').getContext('2d'),
             'MFI',
             mfis,
@@ -105,7 +105,7 @@
             CHART_BACKGROUND_COLORS.blue
           )
 
-          chart3 = getChart(
+          rsiChart = getChart(
             document.getElementById('rsi').getContext('2d'),
             'RSI',
             rsis,
@@ -113,7 +113,7 @@
             CHART_BACKGROUND_COLORS.green
           )
 
-          chart4 = getChart(
+          cciChart = getChart(
             document.getElementById('cci').getContext('2d'),
             'CCI',
             ccis,
@@ -121,7 +121,7 @@
             CHART_BACKGROUND_COLORS.orange
           )
 
-          chart5 = getChart(
+          williamsrChart = getChart(
             document.getElementById('williamsR').getContext('2d'),
             'Williams%R',
             williamsRs,

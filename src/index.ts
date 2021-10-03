@@ -74,7 +74,7 @@ ws.on('message', async (data) => {
       })
 
       if (buyingOrderResult.error) {
-        logWriter.write(`${printNow()} buy error ${JSON.stringify(buyingOrderResult)}\n`)
+        logWriter.write(`${printNow()} bid err ${JSON.stringify(buyingOrderResult)}\n`)
       } else {
         const buyingOrderDetail = await waitUntilOrderDone(buyingOrderResult.uuid)
 
@@ -82,7 +82,7 @@ ws.on('message', async (data) => {
           buyingOrderDetail.trades.reduce((acc, current) => acc + +current.funds, 0) /
           +buyingOrderDetail.executed_volume
 
-        logWriter.write(`${printNow()} buy detail ${JSON.stringify(buyingOrderDetail)}\n`)
+        logWriter.write(`${printNow()} bid res ${JSON.stringify(buyingOrderDetail)}\n`) // res = result
 
         const sellingOption = {
           market: buyingOrderDetail.market,
@@ -95,11 +95,14 @@ ws.on('message', async (data) => {
         while (true) {
           const sellingOrderResult = await orderCoin(sellingOption)
 
-          logWriter.write(`${printNow()} sell result ${JSON.stringify(sellingOrderResult)}\n`)
-
           if (sellingOrderResult.error) {
-            logWriter.write(`${printNow()} sell error ${JSON.stringify(sellingOption)}\n`)
+            logWriter.write(
+              `${printNow()} ask err ${JSON.stringify(sellingOrderResult)} ${JSON.stringify(
+                sellingOption
+              )}\n`
+            )
           } else {
+            logWriter.write(`${printNow()} ask res ${JSON.stringify(sellingOrderResult)}\n`) // res = result
             break
           }
         }
