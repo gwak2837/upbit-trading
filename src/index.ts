@@ -3,7 +3,7 @@ import WebSocket from 'ws'
 import { cci, mfi, rsi, willliamsR } from './lib/indicator'
 import { cancelOrder, ceilUpbitPrice, getOrder, getOrders, order as orderCoin } from './lib/upbit'
 import { UpbitOrder, UpbitError } from './types/upbit'
-import { arrayMax, arrayMin, arraySumation, printNow, sleep } from './utils'
+import { arrayMax, arrayMin, arraySumation, printNow } from './utils'
 import {
   AUTO_SELLING_RATIO,
   TICK_INTERVAL,
@@ -142,19 +142,19 @@ async function mergeBuyingOrders() {
   const askOrders = orders.filter((order) => order.side === 'ask')
   const canceledAskOrders: (UpbitOrder & UpbitError)[] = []
 
-  for (let i = 0; i < askOrders.length; i++) {
-    const canceledAskOrder = await cancelOrder(askOrders[i].uuid)
-    if (!canceledAskOrder.error) canceledAskOrders.push()
+  for (const order of askOrders) {
+    const canceledAskOrder = await cancelOrder(order.uuid)
+    if (!canceledAskOrder.error) canceledAskOrders.push(canceledAskOrder)
   }
 
   if (canceledAskOrders.length === 0) return
 
   let sumation = 0,
     volumeSumation = 0
-  canceledAskOrders.forEach((order) => {
+  for (const order of canceledAskOrders) {
     sumation += +order.price * +order.remaining_volume
     volumeSumation += +order.remaining_volume
-  })
+  }
 
   const sellingOption = {
     market: COIN_CODE,
