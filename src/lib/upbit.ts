@@ -2,53 +2,11 @@ import { createHash } from 'crypto'
 import { encode } from 'querystring'
 
 import { sign } from 'jsonwebtoken'
-import request from 'request'
 import { v4 as uuidv4 } from 'uuid'
 
 import { UpbitError, UpbitOrder, UpbitOrderDetail } from '../types/upbit'
-import { sleep } from '../utils'
+import { requestWithDelay, sleep } from '../utils'
 import { ACCESS_KEY, SECRET_KEY, UPBIT_API_URL } from '../utils/options'
-
-class Waiter {
-  period = 500
-  paused = false
-
-  constructor(period?: number) {
-    if (period) this.period = period
-  }
-
-  async wait() {
-    let count = 100
-    while (this.paused) {
-      await sleep(this.period)
-      if (count-- < 0) {
-        this.paused = false
-        break
-      }
-    }
-  }
-
-  pause() {
-    this.paused = true
-
-    setTimeout(() => {
-      this.paused = false
-    }, this.period)
-  }
-}
-
-const waiter = new Waiter()
-
-async function requestToUpbitWithDelay<T>(options: request.RequiredUriUrl & request.CoreOptions) {
-  await waiter.wait()
-  return new Promise<T>((resolve, reject) => {
-    request(options, (error, __, body) => {
-      waiter.pause()
-      if (error) reject(error)
-      else resolve(body)
-    })
-  })
-}
 
 function createToken(query: string) {
   return sign(
@@ -80,7 +38,7 @@ export function order(body: OrderBody) {
     json: body,
   }
 
-  return requestToUpbitWithDelay<UpbitOrder & UpbitError>(options)
+  return requestWithDelay<UpbitOrder & UpbitError>(options)
 }
 
 export function cancelOrder(uuid: string) {
@@ -94,7 +52,7 @@ export function cancelOrder(uuid: string) {
     json: body,
   }
 
-  return requestToUpbitWithDelay<Record<string, string>>(options)
+  return requestWithDelay<UpbitOrder & UpbitError>(options)
 }
 
 export function getOrder(uuid: string) {
@@ -108,7 +66,7 @@ export function getOrder(uuid: string) {
     json: body,
   }
 
-  return requestToUpbitWithDelay<UpbitOrderDetail>(options)
+  return requestWithDelay<UpbitOrderDetail>(options)
 }
 
 export function getOrders(body: any) {
@@ -121,7 +79,7 @@ export function getOrders(body: any) {
     json: body,
   }
 
-  return requestToUpbitWithDelay<UpbitOrderDetail[] & UpbitError>(options)
+  return requestWithDelay<UpbitOrderDetail[] & UpbitError>(options)
 }
 
 export function ceilUpbitPrice(price: number) {

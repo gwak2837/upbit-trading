@@ -1,3 +1,5 @@
+import request from 'request'
+
 export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
@@ -40,4 +42,45 @@ export function arraySumation(arr: number[]) {
 
 export function printNow() {
   return new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+}
+
+class Waiter {
+  period = 500
+  paused = false
+
+  constructor(period?: number) {
+    if (period) this.period = period
+  }
+
+  async wait() {
+    let count = 100
+    while (this.paused) {
+      await sleep(this.period)
+      if (count-- < 0) {
+        this.paused = false
+        break
+      }
+    }
+  }
+
+  pause() {
+    this.paused = true
+
+    setTimeout(() => {
+      this.paused = false
+    }, this.period)
+  }
+}
+
+const waiter = new Waiter()
+
+export async function requestWithDelay<T>(options: request.RequiredUriUrl & request.CoreOptions) {
+  await waiter.wait()
+  return new Promise<T>((resolve, reject) => {
+    request(options, (error, __, body) => {
+      waiter.pause()
+      if (error) reject(error)
+      else resolve(body)
+    })
+  })
 }
