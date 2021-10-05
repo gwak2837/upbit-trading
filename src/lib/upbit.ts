@@ -109,3 +109,12 @@ export function ceilUpbitPrice(price: number) {
 
   return formattedPrice
 }
+
+export function getCoinUnit(COIN_CODE: string) {
+  switch (COIN_CODE) {
+    case 'KRW-BTC':
+      return 8
+    default:
+      return 0
+  }
+}
