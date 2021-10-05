@@ -13,6 +13,7 @@ import {
   BUYING_ORDERS_MERGING_INTERVAL,
   BUYING_ORDERS_MERGING_MAX_COUNT,
   COIN_UNIT,
+  BUYING_AMOUNT_UNIT,
 } from './utils/options'
 import { logWriter, tickWriter } from './utils/writer'
 
@@ -74,7 +75,7 @@ ws.on('message', async (data) => {
       market: COIN_CODE,
       ord_type: 'price',
       // ord_type: 'limit',
-      price: '6000',
+      price: String(BUYING_AMOUNT_UNIT),
       // price: 'tick.tp',
       side: 'bid',
       // volume: tick.tp / BUYING_AMOUNT_UNIT,
@@ -170,8 +171,8 @@ async function mergeBuyingOrders() {
   }
 
   const volumeSum = `${volumeIntSum + Number(String(volumeDecimalSum).slice(0, -COIN_UNIT))}.${(
-    String(volumeDecimalSum).slice(-COIN_UNIT) + zeroPadding
-  ).slice(0, COIN_UNIT)}`
+    zeroPadding + String(volumeDecimalSum).slice(-COIN_UNIT)
+  ).slice(-COIN_UNIT)}`
 
   const averageSellingPrice = priceVolumeSum / +volumeSum
 
