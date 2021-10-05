@@ -169,9 +169,9 @@ async function mergeBuyingOrders() {
     volumeDecimalSum += +(decimal + zeroPadding).slice(0, COIN_UNIT)
   }
 
-  const volumeSum = `${
-    volumeIntSum + Number(String(volumeDecimalSum).slice(0, -COIN_UNIT))
-  }.${String(volumeDecimalSum).slice(-COIN_UNIT)}`
+  const volumeSum = `${volumeIntSum + Number(String(volumeDecimalSum).slice(0, -COIN_UNIT))}.${(
+    String(volumeDecimalSum).slice(-COIN_UNIT) + zeroPadding
+  ).slice(0, COIN_UNIT)}`
 
   const averageSellingPrice = priceVolumeSum / +volumeSum
 
