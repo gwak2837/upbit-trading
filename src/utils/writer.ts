@@ -9,8 +9,6 @@ export const tickWriter = fs
     console.log(`${printNow()} finish`)
   })
 
-// ${new Date().toLocaleString()}
-
 tickWriter.write('Time,Open,High,Low,Close,Volume,RSI,CCI,MFI,Williams%R,Buy\n')
 
 export const logWriter = fs

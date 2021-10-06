@@ -141,6 +141,7 @@ async function mergeBuyingOrders() {
     order_by: 'asc',
   })
 
+  if (orders.error) logWriter.write(`${printNow()} getOrders err ${JSON.stringify(orders)}\n`)
   if (orders.length < 2) return
 
   const askOrders = orders
@@ -153,7 +154,9 @@ async function mergeBuyingOrders() {
 
   for (const order of askOrders) {
     const canceledAskOrder = await cancelOrder(order.uuid)
-    if (!canceledAskOrder.error) canceledAskOrders.push(canceledAskOrder)
+    if (canceledAskOrder.error)
+      logWriter.write(`${printNow()} cancelOrder err ${JSON.stringify(orders)}\n`)
+    else canceledAskOrders.push(canceledAskOrder)
   }
 
   if (canceledAskOrders.length === 0) return
