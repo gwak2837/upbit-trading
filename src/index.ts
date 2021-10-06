@@ -1,3 +1,4 @@
+import { exit } from 'process'
 import WebSocket from 'ws'
 
 import { cci, mfi, rsi, willliamsR } from './lib/indicator'
@@ -37,6 +38,7 @@ ws.on('open', () => {
   console.log(`${printNow()} websocket closed`)
   tickWriter.end()
   logWriter.end()
+  exit()
 })
 
 ws.on('message', async (data) => {
