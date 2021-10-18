@@ -1,22 +1,24 @@
+import fs from 'fs'
 import { exit } from 'process'
+
 import WebSocket from 'ws'
 
 import { cci, mfi, rsi, willliamsR } from './lib/indicator'
 import { cancelOrder, ceilUpbitPrice, getOrder, getOrders, order as orderCoin } from './lib/upbit'
 import { UpbitOrder } from './types/upbit'
-import { arrayMax, arrayMin, sumArray, printNow } from './utils'
+import { arrayMax, arrayMin, printNow, sumArray } from './utils'
 import {
   AUTO_SELLING_RATIO,
+  BUYING_AMOUNT_UNIT,
+  BUYING_ORDERS_MERGING_INTERVAL,
+  BUYING_ORDERS_MERGING_MAX_COUNT,
+  COIN_CODE,
+  COIN_UNIT,
   TICK_INTERVAL,
   goodToBuy,
   upbitWebSocketRequestOption,
-  COIN_CODE,
-  BUYING_ORDERS_MERGING_INTERVAL,
-  BUYING_ORDERS_MERGING_MAX_COUNT,
-  COIN_UNIT,
-  BUYING_AMOUNT_UNIT,
 } from './utils/options'
-import { logWriter, tickWriter } from './utils/writer'
+import { logWriter, startingDate, tickWriter } from './utils/writer'
 
 let tickIth = 0
 const tempTicks = new Array()
@@ -132,6 +134,21 @@ async function waitUntilOrderDone(uuid: string) {
     if (state === 'done' || state === 'cancel') return buyingOrder
   }
 }
+
+const fiveMinutes = 5 * 60 * 1000
+
+setInterval(() => {
+  fs.stat(`docs/${startingDate.getTime()}-tick-${TICK_INTERVAL}.csv`, (err, stats) => {
+    if (err) throw err
+
+    const now = new Date()
+
+    if (now.getTime() - stats.mtime.getTime() > fiveMinutes)
+      throw new Error(`파일 수정일: ${stats.mtime.toLocaleString()}. 현재: ${now.toLocaleString()}`)
+
+    console.log(`${now.toLocaleString()} 정상 동작 중...`)
+  })
+}, fiveMinutes)
 
 setInterval(() => {
   mergeBuyingOrders()

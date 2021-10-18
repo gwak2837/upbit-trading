@@ -3,8 +3,10 @@ import fs from 'fs'
 import { TICK_INTERVAL } from './options'
 import { printNow } from '.'
 
+export const startingDate = new Date()
+
 export const tickWriter = fs
-  .createWriteStream(`docs/${new Date().getTime()}-tick-${TICK_INTERVAL}.csv`)
+  .createWriteStream(`docs/${startingDate.getTime()}-tick-${TICK_INTERVAL}.csv`)
   .on('finish', () => {
     console.log(`${printNow()} finish`)
   })
@@ -12,7 +14,7 @@ export const tickWriter = fs
 tickWriter.write('Time,Open,High,Low,Close,Volume,RSI,CCI,MFI,Williams%R,Buy\n')
 
 export const logWriter = fs
-  .createWriteStream(`docs/${new Date().getTime()}-log.txt`)
+  .createWriteStream(`docs/${startingDate.getTime()}-log.txt`)
   .on('finish', () => {
     console.log(`${printNow()} finish`)
   })
