@@ -1,4 +1,3 @@
-import fs from 'fs'
 import { exit } from 'process'
 
 import { v4 } from 'uuid'
@@ -6,14 +5,21 @@ import WebSocket from 'ws'
 
 import { Asset } from './types/upbit'
 import { printNow } from './utils'
-import { COIN_CODE, TICK_INTERVAL } from './utils/options'
-import { ceilUpbitPrice, getAsset, getOrder } from './utils/upbit'
-import { logWriter, startingDate } from './utils/writer'
+import {
+  COIN_CODE,
+  MAX_MONEY_RATIO,
+  MIN_MONEY_RATIO,
+  ORDER_PRICE_UNIT,
+  TICK_INTERVAL,
+} from './utils/options'
+import { getAssets, getMoneyRatio, getOrder, orderCoin } from './utils/upbit'
+import { logWriter } from './utils/writer'
 
 let tickIth = 0
+let isTrading = false
 
-let asset: Asset
-getAsset().then((newAsset) => (asset = newAsset))
+let assets: Asset[]
+getAssets().then((newAssets) => (assets = newAssets))
 
 const ws = new WebSocket('wss://api.upbit.com/websocket/v1')
 
@@ -41,70 +47,54 @@ ws.on('open', () => {
 })
 
 ws.on('message', async (data) => {
-  const tick = JSON.parse(data.toString('utf-8'))
+  if (isTrading) return
 
   tickIth = tickIth++ < TICK_INTERVAL ? tickIth : 1
   if (tickIth !== TICK_INTERVAL) return
 
   logWriter.write(`${printNow()}\n`)
 
-  //
-  asset = await getAsset()
-  console.log('👀 - asset', asset)
+  const tick = JSON.parse(data.toString('utf-8'))
+  const currentMoneyRatio = getMoneyRatio(assets, tick.tp)
 
-  //   if (buyingCondition) {
-  //     const buyingOrderResult = await orderCoin({
-  //       market: COIN_CODE,
-  //       ord_type: 'price',
-  //       // ord_type: 'limit',
-  //       price: String(BUYING_AMOUNT_UNIT),
-  //       // price: 'tick.tp',
-  //       side: 'bid',
-  //       // volume: tick.tp / BUYING_AMOUNT_UNIT,
-  //     })
+  // 코인 판매
+  if (currentMoneyRatio < MIN_MONEY_RATIO) {
+    isTrading = true
 
-  //     if (buyingOrderResult.error) {
-  //       logWriter.write(`${printNow()} bid err ${JSON.stringify(buyingOrderResult)}\n`)
-  //     } else {
-  //       const buyingOrderDetail = await waitUntilOrderDone(buyingOrderResult.uuid)
+    const sellingResult = await orderCoin({
+      market: COIN_CODE,
+      side: 'ask',
+      volume: `${Math.ceil((ORDER_PRICE_UNIT * 100_000_000) / tick.tp) / 100_000_000}`,
+      ord_type: 'market',
+    })
+    await waitUntilOrderExecuted(sellingResult.uuid)
 
-  //       const averageBuyingPrice =
-  //         buyingOrderDetail.trades.reduce((acc, current) => acc + +current.funds, 0) /
-  //         +buyingOrderDetail.executed_volume
+    assets = await getAssets()
 
-  //       logWriter.write(`${printNow()} bid res ${JSON.stringify(buyingOrderDetail)}\n`) // res = result
+    isTrading = false
+  }
 
-  //       const sellingOption = {
-  //         market: COIN_CODE,
-  //         ord_type: 'limit' as const,
-  //         price: `${ceilUpbitPrice(averageBuyingPrice * AUTO_SELLING_RATIO)}`,
-  //         side: 'ask' as const,
-  //         volume: buyingOrderDetail.executed_volume,
-  //       }
+  // 코인 구매
+  else if (currentMoneyRatio > MAX_MONEY_RATIO) {
+    isTrading = true
 
-  //       while (true) {
-  //         const sellingOrderResult = await orderCoin(sellingOption)
+    const buyingResult = await orderCoin({
+      market: COIN_CODE,
+      side: 'bid',
+      price: '5000',
+      ord_type: 'price',
+    })
+    await waitUntilOrderExecuted(buyingResult.uuid)
 
-  //         if (sellingOrderResult.error) {
-  //           logWriter.write(
-  //             `${printNow()} ask err ${JSON.stringify(sellingOrderResult)} ${JSON.stringify(
-  //               sellingOption
-  //             )}\n`
-  //           )
-  //         } else {
-  //           logWriter.write(`${printNow()} ask res ${JSON.stringify(sellingOrderResult)}\n`) // res = result
-  //           break
-  //         }
-  //       }
-  //     }
-  //   }
+    assets = await getAssets()
+
+    isTrading = false
+  }
 })
 
-async function waitUntilOrderDone(uuid: string) {
+async function waitUntilOrderExecuted(uuid: string) {
   while (true) {
-    const buyingOrder = await getOrder(uuid)
-    const state = buyingOrder.state
-
-    if (state === 'done' || state === 'cancel') return buyingOrder
+    const { state } = await getOrder(uuid)
+    if (state === 'done' || state === 'cancel') return
   }
 }

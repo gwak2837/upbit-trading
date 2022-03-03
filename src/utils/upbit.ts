@@ -33,8 +33,8 @@ function createToken(query?: string) {
       )
 }
 
-export function getAsset() {
-  return fetchWithInterval<Asset>(UPBIT_API_URL + '/v1/accounts', {
+export function getAssets() {
+  return fetchWithInterval<Asset[]>(UPBIT_API_URL + '/v1/accounts', {
     method: 'GET',
     headers: { Authorization: `Bearer ${createToken()}` },
   })
@@ -74,7 +74,10 @@ type OrderCoinBody = {
 export function orderCoin(body: OrderCoinBody) {
   return fetchWithInterval<UpbitOrder & UpbitError>(UPBIT_API_URL + '/v1/orders', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${createToken(encode(body))}` },
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${createToken(encode(body))}`,
+    },
     body: JSON.stringify(body),
   })
 }
@@ -114,4 +117,20 @@ export function getCoinUnit(COIN_CODE: string) {
     default:
       return 0
   }
+}
+
+export function getMoneyRatio(assets: Asset[], currentPrice: number) {
+  let moneyAmount = 0
+  let totalAmount = 0
+
+  for (const asset of assets) {
+    if (asset.currency === 'KRW') {
+      moneyAmount += Number(asset.balance)
+      totalAmount += Number(asset.balance)
+    } else {
+      totalAmount += Number(asset.balance) * currentPrice
+    }
+  }
+
+  return (moneyAmount * 100) / totalAmount
 }
