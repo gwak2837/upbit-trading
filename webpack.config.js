@@ -23,7 +23,7 @@ module.exports = {
     path: resolve(__dirname, 'dist'),
   },
   optimization: {
-    minimize: true,
+    minimize: false,
     minimizer: [
       new TerserPlugin({
         parallel: true,
