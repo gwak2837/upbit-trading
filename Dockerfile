@@ -1,29 +1,25 @@
 # Install all packages and transpile TypeScript into JavaScript
 FROM node:16-alpine AS builder
 
-WORKDIR /server
+ENV NODE_ENV=production
+
+WORKDIR /app
 
 COPY .yarn .yarn
 COPY src src
-COPY .yarnrc.yml package.json tsconfig.json yarn.lock ./
+COPY .yarnrc.yml package.json tsconfig.json webpack.config.js yarn.lock ./
 
 RUN yarn && yarn build
 
 # Install only dependency packages
-FROM node:16-alpine
+FROM node:16-alpine AS runner
 
 ENV NODE_ENV=production
 
-WORKDIR /server
+WORKDIR /app
 
-COPY .yarn/plugins .yarn/plugins
-COPY .yarn/releases .yarn/releases
-COPY .yarnrc.yml package.json yarn.lock ./
+COPY --from=builder /app/dist dist
 
-RUN yarn workspaces focus --production
+EXPOSE $PORT
 
-COPY --from=builder /server/dist dist
-
-ENTRYPOINT ["yarn"]
-
-CMD ["start"]
+ENTRYPOINT ["node", "dist/index.js"]

@@ -1,44 +1,41 @@
 import fs from 'fs'
 import { exit } from 'process'
 
+import { v4 } from 'uuid'
 import WebSocket from 'ws'
 
-import { cci, mfi, rsi, willliamsR } from './lib/indicator'
-import { cancelOrder, ceilUpbitPrice, getOrder, getOrders, order as orderCoin } from './lib/upbit'
-import { UpbitOrder } from './types/upbit'
-import { arrayMax, arrayMin, printNow, sumArray } from './utils'
-import {
-  AUTO_SELLING_RATIO,
-  BUYING_AMOUNT_UNIT,
-  BUYING_ORDERS_MERGING_INTERVAL,
-  BUYING_ORDERS_MERGING_MAX_COUNT,
-  COIN_CODE,
-  COIN_UNIT,
-  TICK_INTERVAL,
-  goodToBuy,
-  upbitWebSocketRequestOption,
-} from './utils/options'
-import { logWriter, startingDate, tickWriter } from './utils/writer'
+import { Asset } from './types/upbit'
+import { printNow } from './utils'
+import { COIN_CODE, TICK_INTERVAL } from './utils/options'
+import { ceilUpbitPrice, getAsset, getOrder } from './utils/upbit'
+import { logWriter, startingDate } from './utils/writer'
 
 let tickIth = 0
-const tempTicks = new Array()
-const tempVolumes = new Array()
 
-let prevIndicator = {
-  rsi: 50,
-  mfi: 50,
-  cci: 0,
-  willliamsR: -50,
-}
+let asset: Asset
+getAsset().then((newAsset) => (asset = newAsset))
 
 const ws = new WebSocket('wss://api.upbit.com/websocket/v1')
 
 ws.on('open', () => {
   console.log(`${printNow()} websocket open`)
-  ws.send(JSON.stringify(upbitWebSocketRequestOption))
+  ws.send(
+    JSON.stringify([
+      {
+        ticket: v4(),
+      },
+      {
+        type: 'ticker',
+        codes: [COIN_CODE],
+        isOnlyRealtime: true,
+      },
+      {
+        format: 'SIMPLE',
+      },
+    ])
+  )
 }).on('close', () => {
   console.log(`${printNow()} websocket closed`)
-  tickWriter.end()
   logWriter.end()
   exit()
 })
@@ -46,84 +43,61 @@ ws.on('open', () => {
 ws.on('message', async (data) => {
   const tick = JSON.parse(data.toString('utf-8'))
 
-  tempTicks.push(tick.tp)
-  tempVolumes.push(tick.tv)
-
   tickIth = tickIth++ < TICK_INTERVAL ? tickIth : 1
-
   if (tickIth !== TICK_INTERVAL) return
 
-  const newTick = {
-    open: tempTicks[0],
-    high: arrayMax(tempTicks),
-    low: arrayMin(tempTicks),
-    close: tick.tp,
-    volume: Math.round(sumArray(tempVolumes) * 1000) / 1000,
-  }
+  logWriter.write(`${printNow()}\n`)
 
-  const newIndicator = {
-    rsi: rsi.nextValue(tick.tp) ?? 50,
-    cci: Math.round((cci.nextValue(newTick) ?? 0) * 100) / 100,
-    mfi: mfi.nextValue(newTick) ?? 50,
-    willliamsR: Math.round((willliamsR.nextValue(newTick as any) ?? -50) * 100) / 100,
-  }
+  //
+  asset = await getAsset()
+  console.log('👀 - asset', asset)
 
-  const buyingCondition = goodToBuy(prevIndicator, newIndicator)
+  //   if (buyingCondition) {
+  //     const buyingOrderResult = await orderCoin({
+  //       market: COIN_CODE,
+  //       ord_type: 'price',
+  //       // ord_type: 'limit',
+  //       price: String(BUYING_AMOUNT_UNIT),
+  //       // price: 'tick.tp',
+  //       side: 'bid',
+  //       // volume: tick.tp / BUYING_AMOUNT_UNIT,
+  //     })
 
-  prevIndicator = newIndicator
-  tempTicks.length = 0
-  tempVolumes.length = 0
+  //     if (buyingOrderResult.error) {
+  //       logWriter.write(`${printNow()} bid err ${JSON.stringify(buyingOrderResult)}\n`)
+  //     } else {
+  //       const buyingOrderDetail = await waitUntilOrderDone(buyingOrderResult.uuid)
 
-  if (buyingCondition) {
-    const buyingOrderResult = await orderCoin({
-      market: COIN_CODE,
-      ord_type: 'price',
-      // ord_type: 'limit',
-      price: String(BUYING_AMOUNT_UNIT),
-      // price: 'tick.tp',
-      side: 'bid',
-      // volume: tick.tp / BUYING_AMOUNT_UNIT,
-    })
+  //       const averageBuyingPrice =
+  //         buyingOrderDetail.trades.reduce((acc, current) => acc + +current.funds, 0) /
+  //         +buyingOrderDetail.executed_volume
 
-    if (buyingOrderResult.error) {
-      logWriter.write(`${printNow()} bid err ${JSON.stringify(buyingOrderResult)}\n`)
-    } else {
-      const buyingOrderDetail = await waitUntilOrderDone(buyingOrderResult.uuid)
+  //       logWriter.write(`${printNow()} bid res ${JSON.stringify(buyingOrderDetail)}\n`) // res = result
 
-      const averageBuyingPrice =
-        buyingOrderDetail.trades.reduce((acc, current) => acc + +current.funds, 0) /
-        +buyingOrderDetail.executed_volume
+  //       const sellingOption = {
+  //         market: COIN_CODE,
+  //         ord_type: 'limit' as const,
+  //         price: `${ceilUpbitPrice(averageBuyingPrice * AUTO_SELLING_RATIO)}`,
+  //         side: 'ask' as const,
+  //         volume: buyingOrderDetail.executed_volume,
+  //       }
 
-      logWriter.write(`${printNow()} bid res ${JSON.stringify(buyingOrderDetail)}\n`) // res = result
+  //       while (true) {
+  //         const sellingOrderResult = await orderCoin(sellingOption)
 
-      const sellingOption = {
-        market: COIN_CODE,
-        ord_type: 'limit' as const,
-        price: `${ceilUpbitPrice(averageBuyingPrice * AUTO_SELLING_RATIO)}`,
-        side: 'ask' as const,
-        volume: buyingOrderDetail.executed_volume,
-      }
-
-      while (true) {
-        const sellingOrderResult = await orderCoin(sellingOption)
-
-        if (sellingOrderResult.error) {
-          logWriter.write(
-            `${printNow()} ask err ${JSON.stringify(sellingOrderResult)} ${JSON.stringify(
-              sellingOption
-            )}\n`
-          )
-        } else {
-          logWriter.write(`${printNow()} ask res ${JSON.stringify(sellingOrderResult)}\n`) // res = result
-          break
-        }
-      }
-    }
-  }
-
-  const tickLog = [printNow(), ...Object.values(newTick), ...Object.values(newIndicator)]
-  if (buyingCondition) tickLog.push('O')
-  tickWriter.write(tickLog.join(',') + '\n')
+  //         if (sellingOrderResult.error) {
+  //           logWriter.write(
+  //             `${printNow()} ask err ${JSON.stringify(sellingOrderResult)} ${JSON.stringify(
+  //               sellingOption
+  //             )}\n`
+  //           )
+  //         } else {
+  //           logWriter.write(`${printNow()} ask res ${JSON.stringify(sellingOrderResult)}\n`) // res = result
+  //           break
+  //         }
+  //       }
+  //     }
+  //   }
 })
 
 async function waitUntilOrderDone(uuid: string) {
@@ -132,92 +106,5 @@ async function waitUntilOrderDone(uuid: string) {
     const state = buyingOrder.state
 
     if (state === 'done' || state === 'cancel') return buyingOrder
-  }
-}
-
-const fiveMinutes = 5 * 60 * 1000
-
-setInterval(() => {
-  fs.stat(`docs/${startingDate.getTime()}-tick-${TICK_INTERVAL}.csv`, (err, stats) => {
-    if (err) throw err
-
-    const now = new Date()
-
-    if (now.getTime() - stats.mtime.getTime() > fiveMinutes)
-      throw new Error(`파일 수정일: ${stats.mtime.toLocaleString()}. 현재: ${now.toLocaleString()}`)
-
-    console.log(`${now.toLocaleString()} 정상 동작 중...`)
-  })
-}, fiveMinutes)
-
-setInterval(() => {
-  mergeBuyingOrders()
-}, BUYING_ORDERS_MERGING_INTERVAL)
-
-async function mergeBuyingOrders() {
-  const orders = await getOrders({
-    market: COIN_CODE,
-    order_by: 'asc',
-  })
-
-  if (orders.error) logWriter.write(`${printNow()} getOrders err ${JSON.stringify(orders)}\n`)
-  if (orders.length < 2) return
-
-  const askOrders = orders
-    .filter((order) => order.side === 'ask')
-    .sort((order, order2) => +order2.price - +order.price)
-    .slice(0, BUYING_ORDERS_MERGING_MAX_COUNT)
-  const canceledAskOrders: UpbitOrder[] = []
-
-  if (askOrders.length < 2) return
-
-  for (const order of askOrders) {
-    const canceledAskOrder = await cancelOrder(order.uuid)
-    if (canceledAskOrder.error)
-      logWriter.write(`${printNow()} cancelOrder err ${JSON.stringify(orders)}\n`)
-    else canceledAskOrders.push(canceledAskOrder)
-  }
-
-  if (canceledAskOrders.length === 0) return
-
-  const zeroPadding = '0'.repeat(COIN_UNIT)
-
-  let priceVolumeSum = 0,
-    volumeIntSum = 0,
-    volumeDecimalSum = 0
-  for (const order of canceledAskOrders) {
-    const [int, decimal] = order.remaining_volume.split('.')
-    priceVolumeSum += +order.price * +order.remaining_volume
-    volumeIntSum += +int
-    volumeDecimalSum += +(decimal + zeroPadding).slice(0, COIN_UNIT)
-  }
-
-  const volumeSum = `${volumeIntSum + Number(String(volumeDecimalSum).slice(0, -COIN_UNIT))}.${(
-    zeroPadding + String(volumeDecimalSum).slice(-COIN_UNIT)
-  ).slice(-COIN_UNIT)}`
-
-  const averageSellingPrice = priceVolumeSum / +volumeSum
-
-  const sellingOption = {
-    market: COIN_CODE,
-    ord_type: 'limit' as const,
-    price: `${ceilUpbitPrice(averageSellingPrice)}`,
-    side: 'ask' as const,
-    volume: volumeSum,
-  }
-
-  while (true) {
-    const sellingOrderResult = await orderCoin(sellingOption)
-
-    if (sellingOrderResult.error) {
-      logWriter.write(
-        `${printNow()} re-ask err ${JSON.stringify(sellingOrderResult)} ${JSON.stringify(
-          sellingOption
-        )}\n`
-      )
-    } else {
-      logWriter.write(`${printNow()} re-ask res ${JSON.stringify(sellingOrderResult)}\n`) // res = result
-      break
-    }
   }
 }

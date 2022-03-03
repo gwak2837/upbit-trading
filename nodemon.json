@@ -1,4 +1,4 @@
 {
-  "ext": "ts",
-  "watch": ["src/"]
+  "ext": "js",
+  "watch": ["dist"]
 }

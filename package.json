@@ -1,35 +1,56 @@
 {
   "name": "upbit-trading",
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "description": "upbit-trading",
+  "homepage": "https://github.com/rmfpdlxmtidl/upbit-trading#readme",
+  "bugs": {
+    "url": "https://github.com/rmfpdlxmtidl/upbit-trading/issues",
+    "email": "gwak2837@kakao.com"
+  },
+  "license": "GPL-3.0-only",
+  "author": "Taeuk Gwak <gwak2837@kakao.com>",
   "main": "index.js",
   "repository": "https://github.com/rmfpdlxmtidl/upbit-trading.git",
-  "author": "Taeuk Gwak <gwak2837@kakao.com>",
-  "license": "MIT",
   "scripts": {
-    "sell": "ts-node -r dotenv/config src/sell.ts --trace-warnings",
-    "orders": "ts-node -r dotenv/config src/orders.ts --trace-warnings",
-    "order": "ts-node -r dotenv/config src/order.ts --trace-warnings",
-    "dev": "NODE_ENV=development nodemon -r dotenv/config src/index.ts --trace-warnings",
-    "build": "rm -rf dist && tsc",
-    "start": "NODE_ENV=production node -r dotenv/config dist/index.js",
-    "test": "NODE_ENV=test ts-node -r dotenv/config test/index.ts"
+    "dev": "NODE_ENV=development concurrently \"webpack\" \"nodemon -r dotenv/config dist/index.js dotenv_config_path=.env.development.local --trace-warnings\"",
+    "build": "NODE_ENV=production webpack",
+    "start": "NODE_ENV=production node -r dotenv/config dist/index.js dotenv_config_path=.env.local",
+    "test": "NODE_ENV=none webpack && node -r dotenv/config dist/index.js dotenv_config_path=.env.development.local",
+    "format": "prettier . --write --ignore-path .gitignore",
+    "lint": "eslint . --fix --ignore-path .gitignore",
+    "type": "tsc --pretty --noEmit",
+    "pre-push": "yarn type",
+    "postinstall": "[ -d '.husky' ] && husky install || true",
+    "asset": "ts-node -r dotenv/config src/asset.ts dotenv_config_path=.env.development.local --trace-warnings"
   },
   "dependencies": {
-    "dotenv": "^10.0.0",
+    "dotenv": "^16.0.0",
     "jsonwebtoken": "^8.5.1",
-    "request": "^2.88.2",
-    "technicalindicators": "^3.1.0",
+    "node-fetch": "^3.2.1",
     "uuid": "^8.3.2",
-    "ws": "^8.2.2"
+    "ws": "^8.5.0"
   },
   "devDependencies": {
-    "@types/jsonwebtoken": "^8.5.5",
-    "@types/node": "^16.10.2",
-    "@types/request": "^2.48.7",
-    "@types/uuid": "^8.3.1",
-    "@types/ws": "^8",
-    "nodemon": "^2.0.13",
-    "ts-node": "^10.2.1",
-    "typescript": "^4.4.3"
-  }
+    "@types/jsonwebtoken": "^8.5.8",
+    "@types/node": "^16.11.26",
+    "@types/uuid": "^8.3.4",
+    "@types/ws": "^8.5.2",
+    "@typescript-eslint/eslint-plugin": "^5.13.0",
+    "@typescript-eslint/parser": "^5.13.0",
+    "concurrently": "^7.0.0",
+    "eslint": "^8.10.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-standard": "^16.0.3",
+    "eslint-plugin-import": "^2.25.4",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "nodemon": "^2.0.15",
+    "terser-webpack-plugin": "^5.3.1",
+    "ts-loader": "^9.2.7",
+    "ts-node": "^10.6.0",
+    "typescript": "^4.6.2",
+    "webpack": "^5.69.1",
+    "webpack-cli": "^4.9.2"
+  },
+  "packageManager": "yarn@3.2.0"
 }
