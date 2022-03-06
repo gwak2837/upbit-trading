@@ -17,6 +17,7 @@ import { logWriter } from './utils/writer'
 
 let tickIth = 0
 let isTrading = false
+const SELLING_AMOUNT = ORDER_PRICE_UNIT * 1.01 // 5000원 미만 판매로 인한 주문 실패 방지
 
 let assets: Asset[]
 getAssets().then((newAssets) => (assets = newAssets))
@@ -57,34 +58,34 @@ ws.on('message', async (data) => {
   const tick = JSON.parse(data.toString('utf-8'))
   const currentMoneyRatio = getMoneyRatio(assets, tick.tp)
 
-  // 코인 판매
-  if (currentMoneyRatio < MIN_MONEY_RATIO) {
+  // 코인 구매
+  if (currentMoneyRatio > MAX_MONEY_RATIO) {
     isTrading = true
 
-    const sellingResult = await orderCoin({
+    const buyingResult = await orderCoin({
       market: COIN_CODE,
-      side: 'ask',
-      volume: `${Math.ceil((ORDER_PRICE_UNIT * 100_000_000) / tick.tp) / 100_000_000}`,
-      ord_type: 'market',
+      side: 'bid',
+      price: `${ORDER_PRICE_UNIT}`,
+      ord_type: 'price',
     })
-    await waitUntilOrderExecuted(sellingResult.uuid)
+    await waitUntilOrderExecuted(buyingResult.uuid)
 
     assets = await getAssets()
 
     isTrading = false
   }
 
-  // 코인 구매
-  else if (currentMoneyRatio > MAX_MONEY_RATIO) {
+  // 코인 판매
+  else if (currentMoneyRatio < MIN_MONEY_RATIO) {
     isTrading = true
 
-    const buyingResult = await orderCoin({
+    const sellingResult = await orderCoin({
       market: COIN_CODE,
-      side: 'bid',
-      price: '5000',
-      ord_type: 'price',
+      side: 'ask',
+      volume: `${Math.ceil((SELLING_AMOUNT * 100_000_000) / tick.tp) / 100_000_000}`,
+      ord_type: 'market',
     })
-    await waitUntilOrderExecuted(buyingResult.uuid)
+    await waitUntilOrderExecuted(sellingResult.uuid)
 
     assets = await getAssets()
 
