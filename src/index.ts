@@ -57,7 +57,7 @@ ws.on('message', async (data) => {
   const tick = JSON.parse(data.toString('utf-8'))
   const currentMoneyRatio = getMoneyRatio(assets, tick.tp)
 
-  tickWriter.write(`${printNow()}, ${tick}, ${currentMoneyRatio}, ${isTrading}\n`)
+  tickWriter.write(`${printNow()}, ${tick.tp}, ${currentMoneyRatio}, ${isTrading}\n`)
 
   // 코인 구매
   if (currentMoneyRatio > MAX_MONEY_RATIO) {
