@@ -13,7 +13,7 @@ import {
   TICK_INTERVAL,
 } from './utils/options'
 import { getAssets, getMoneyRatio, getOrder, orderCoin } from './utils/upbit'
-import { logWriter } from './utils/writer'
+import { logWriter, tickWriter } from './utils/writer'
 
 let tickIth = 0
 let isTrading = false
@@ -43,6 +43,7 @@ ws.on('open', () => {
   )
 }).on('close', () => {
   console.log(`${printNow()} websocket closed`)
+  tickWriter.end()
   logWriter.end()
   exit()
 })
@@ -53,10 +54,10 @@ ws.on('message', async (data) => {
   tickIth = tickIth++ < TICK_INTERVAL ? tickIth : 1
   if (tickIth !== TICK_INTERVAL) return
 
-  logWriter.write(`${printNow()}\n`)
-
   const tick = JSON.parse(data.toString('utf-8'))
   const currentMoneyRatio = getMoneyRatio(assets, tick.tp)
+
+  tickWriter.write(`${printNow()}, ${tick}, ${currentMoneyRatio}, ${isTrading}\n`)
 
   // 코인 구매
   if (currentMoneyRatio > MAX_MONEY_RATIO) {
@@ -68,6 +69,13 @@ ws.on('message', async (data) => {
       price: `${ORDER_PRICE_UNIT}`,
       ord_type: 'price',
     })
+
+    if (buyingResult.error) {
+      return logWriter.write(`${printNow()} bid error ${JSON.stringify(buyingResult)}\n`)
+    } else {
+      logWriter.write(`${printNow()} bid success ${JSON.stringify(buyingResult)}\n`)
+    }
+
     await waitUntilOrderExecuted(buyingResult.uuid)
 
     assets = await getAssets()
@@ -85,6 +93,13 @@ ws.on('message', async (data) => {
       volume: `${Math.ceil((SELLING_AMOUNT * 100_000_000) / tick.tp) / 100_000_000}`,
       ord_type: 'market',
     })
+
+    if (sellingResult.error) {
+      return logWriter.write(`${printNow()} ask error ${JSON.stringify(sellingResult)}\n`)
+    } else {
+      logWriter.write(`${printNow()} ask success ${JSON.stringify(sellingResult)}\n`)
+    }
+
     await waitUntilOrderExecuted(sellingResult.uuid)
 
     assets = await getAssets()
