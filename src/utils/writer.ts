@@ -24,7 +24,7 @@ export const logWriter = fs
 const tenMinutes = 600_000
 
 setInterval(() => {
-  fs.stat(`docs/${startingDate.getTime()}-tick.txt`, (err, stats) => {
+  fs.stat(`docs/${startingDate.getTime()}-tick.csv`, (err, stats) => {
     if (err) throw err
 
     const now = new Date()
