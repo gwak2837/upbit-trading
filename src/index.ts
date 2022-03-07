@@ -71,7 +71,7 @@ ws.on('message', async (data) => {
     })
 
     if (buyingResult.error) {
-      return logWriter.write(`${printNow()} bid error ${JSON.stringify(buyingResult)}\n`)
+      return logWriter.write(`${printNow()} bid error ${JSON.stringify(buyingResult.error)}\n`)
     } else {
       logWriter.write(`${printNow()} bid success ${JSON.stringify(buyingResult)}\n`)
     }
@@ -87,15 +87,19 @@ ws.on('message', async (data) => {
   else if (currentMoneyRatio < MIN_MONEY_RATIO) {
     isTrading = true
 
+    const sellingVolume = `${
+      Math.ceil((SELLING_AMOUNT * 100_000_000) / tick.tp) / 100_000_000
+    }`.padEnd(10, '0')
+
     const sellingResult = await orderCoin({
       market: COIN_CODE,
       side: 'ask',
-      volume: `${Math.ceil((SELLING_AMOUNT * 100_000_000) / tick.tp) / 100_000_000}`,
+      volume: sellingVolume,
       ord_type: 'market',
     })
 
     if (sellingResult.error) {
-      return logWriter.write(`${printNow()} ask error ${JSON.stringify(sellingResult)}\n`)
+      return logWriter.write(`${printNow()} ask error ${JSON.stringify(sellingResult.error)}\n`)
     } else {
       logWriter.write(`${printNow()} ask success ${JSON.stringify(sellingResult)}\n`)
     }
