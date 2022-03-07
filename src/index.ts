@@ -11,12 +11,13 @@ import {
   MIN_MONEY_RATIO,
   ORDER_PRICE_UNIT,
   TICK_INTERVAL,
-} from './utils/options'
+} from './utils/config'
 import { getAssets, getMoneyRatio, getOrder, orderCoin } from './utils/upbit'
 import { logWriter, tickWriter } from './utils/writer'
 
 let tickIth = 0
 let isTrading = false
+const BUYING_AMOUNT = ORDER_PRICE_UNIT
 const SELLING_AMOUNT = ORDER_PRICE_UNIT * 1.01 // 5000원 미만 판매로 인한 주문 실패 방지
 
 let assets: Asset[]
@@ -68,7 +69,7 @@ ws.on('message', async (data) => {
     const buyingResult = await orderCoin({
       market: COIN_CODE,
       side: 'bid',
-      price: `${ORDER_PRICE_UNIT}`,
+      price: `${BUYING_AMOUNT}`,
       ord_type: 'price',
     })
 

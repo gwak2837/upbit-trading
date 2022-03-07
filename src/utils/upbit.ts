@@ -5,31 +5,26 @@ import { sign } from 'jsonwebtoken'
 import { v4 as uuidv4 } from 'uuid'
 
 import { Asset, UpbitError, UpbitOrder, UpbitOrderDetail } from '../types/upbit'
+import { UPBIT_API_URL, UPBIT_OPEN_API_ACCESS_KEY, UPBIT_OPEN_API_SECRET_KEY } from './config'
 import { fetchWithInterval } from '.'
-
-export const UPBIT_API_URL = 'https://api.upbit.com'
-export const ACCESS_KEY = process.env.UPBIT_OPEN_API_ACCESS_KEY ?? ''
-export const SECRET_KEY = process.env.UPBIT_OPEN_API_SECRET_KEY ?? ''
-
-if (!ACCESS_KEY || !SECRET_KEY) throw new Error('ACCESS_KEY, SECRET_KEY 환경 변수를 설정해주세요')
 
 function createToken(query?: string) {
   return query
     ? sign(
         {
-          access_key: ACCESS_KEY,
+          access_key: UPBIT_OPEN_API_ACCESS_KEY,
           nonce: uuidv4(),
           query_hash: createHash('sha512').update(query, 'utf-8').digest('hex'),
           query_hash_alg: 'SHA512',
         },
-        SECRET_KEY
+        UPBIT_OPEN_API_SECRET_KEY
       )
     : sign(
         {
-          access_key: ACCESS_KEY,
+          access_key: UPBIT_OPEN_API_ACCESS_KEY,
           nonce: uuidv4(),
         },
-        SECRET_KEY
+        UPBIT_OPEN_API_SECRET_KEY
       )
 }
 

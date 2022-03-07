@@ -4,7 +4,7 @@ import { printNow } from '.'
 
 const startingDate = new Date()
 
-// 매 60번째 tick 기록
+// 매 n번째 tick 기록
 export const tickWriter = fs
   .createWriteStream(`docs/${startingDate.getTime()}-tick.csv`)
   .on('finish', () => {
