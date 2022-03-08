@@ -46,7 +46,7 @@ export function getOrder(uuid: string) {
 
 type GetOrdersBody = {
   market: string
-  limit: number
+  limit?: number
 }
 
 export function getOrders(body: GetOrdersBody) {
@@ -55,6 +55,18 @@ export function getOrders(body: GetOrdersBody) {
   return fetchWithInterval<UpbitOrderDetail[] & UpbitError>(UPBIT_API_URL + '/v1/orders?' + query, {
     method: 'GET',
     headers: { Authorization: `Bearer ${createToken(query)}` },
+  })
+}
+
+export function cancelOrder(uuid: string) {
+  const body = { uuid }
+  const query = encode(body)
+
+  return fetchWithInterval<UpbitOrder[] & UpbitError>(UPBIT_API_URL + '/v1/order?' + query, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${createToken(query)}`,
+    },
   })
 }
 
@@ -120,10 +132,10 @@ export function getMoneyRatio(assets: Asset[], currentPrice: number) {
 
   for (const asset of assets) {
     if (asset.currency === 'KRW') {
-      moneyAmount += Number(asset.balance)
-      totalAmount += Number(asset.balance)
+      moneyAmount += +asset.balance
+      totalAmount += +asset.balance
     } else {
-      totalAmount += Number(asset.balance) * currentPrice
+      totalAmount += +asset.balance * currentPrice
     }
   }
 

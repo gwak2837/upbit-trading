@@ -12,13 +12,18 @@ import {
   ORDER_PRICE_UNIT,
   TICK_INTERVAL,
 } from './utils/config'
-import { getAssets, getMoneyRatio, getOrder, orderCoin } from './utils/upbit'
-import { logWriter, tickWriter } from './utils/writer'
+import {
+  cancelOrder,
+  getAssets,
+  getMoneyRatio,
+  getOrder,
+  getOrders,
+  orderCoin,
+} from './utils/upbit'
+import { TEN_MINUTES, logWriter, tickWriter } from './utils/writer'
 
 let tickIth = 0
 let isTrading = false
-const BUYING_AMOUNT = ORDER_PRICE_UNIT
-const SELLING_AMOUNT = ORDER_PRICE_UNIT * 1.01 // 5000원 미만 판매로 인한 주문 실패 방지
 
 let assets: Asset[]
 getAssets().then((newAssets) => (assets = newAssets))
@@ -58,19 +63,20 @@ ws.on('message', async (data) => {
   const tick = JSON.parse(data.toString('utf-8'))
   const currentMoneyRatio = getMoneyRatio(assets, tick.tp)
 
-  tickWriter.write(
-    `${printNow()}, ${tick.tp}, ${Math.ceil(currentMoneyRatio * 1000) / 1000}, ${isTrading}\n`
-  )
-
   // 코인 구매
   if (currentMoneyRatio > MAX_MONEY_RATIO) {
     isTrading = true
 
+    const buyingVolume = `${
+      Math.ceil((ORDER_PRICE_UNIT * 100_000_000) / tick.tp) / 100_000_000
+    }`.padEnd(10, '0')
+
     const buyingResult = await orderCoin({
       market: COIN_CODE,
       side: 'bid',
-      price: `${BUYING_AMOUNT}`,
-      ord_type: 'price',
+      volume: buyingVolume,
+      price: `${tick.tp}`,
+      ord_type: 'limit',
     })
 
     if (buyingResult.error) {
@@ -78,8 +84,6 @@ ws.on('message', async (data) => {
     } else {
       logWriter.write(`${printNow()} bid success ${JSON.stringify(buyingResult)}\n`)
     }
-
-    await waitUntilOrderExecuted(buyingResult.uuid)
 
     assets = await getAssets()
 
@@ -91,14 +95,15 @@ ws.on('message', async (data) => {
     isTrading = true
 
     const sellingVolume = `${
-      Math.ceil((SELLING_AMOUNT * 100_000_000) / tick.tp) / 100_000_000
+      Math.ceil((ORDER_PRICE_UNIT * 100_000_000) / tick.tp) / 100_000_000
     }`.padEnd(10, '0')
 
     const sellingResult = await orderCoin({
       market: COIN_CODE,
       side: 'ask',
       volume: sellingVolume,
-      ord_type: 'market',
+      price: `${tick.tp}`,
+      ord_type: 'limit',
     })
 
     if (sellingResult.error) {
@@ -107,17 +112,29 @@ ws.on('message', async (data) => {
       logWriter.write(`${printNow()} ask success ${JSON.stringify(sellingResult)}\n`)
     }
 
-    await waitUntilOrderExecuted(sellingResult.uuid)
+    assets = await getAssets()
+
+    isTrading = false
+  }
+
+  // 자산 업데이트
+  else {
+    isTrading = true
 
     assets = await getAssets()
 
     isTrading = false
   }
+
+  tickWriter.write(`${printNow()}, ${tick.tp}, ${Math.ceil(currentMoneyRatio * 1000) / 1000}\n`)
 })
 
-async function waitUntilOrderExecuted(uuid: string) {
-  while (true) {
-    const { state } = await getOrder(uuid)
-    if (state === 'done' || state === 'cancel') return
+setInterval(async () => {
+  const orders = await getOrders({
+    market: COIN_CODE,
+    limit: 10,
+  })
+  for (const order of orders) {
+    cancelOrder(order.uuid)
   }
-}
+}, TEN_MINUTES)

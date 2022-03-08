@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "NODE_ENV=development concurrently \"webpack\" \"nodemon -r dotenv/config dist/index.js dotenv_config_path=.env.development.local --trace-warnings\"",
     "build": "NODE_ENV=production webpack",
-    "start": "NODE_ENV=production node -r dotenv/config dist/index.js dotenv_config_path=.env.local",
+    "start": "NODE_ENV=production node -r dotenv/config dist/index.js dotenv_config_path=.env",
     "test": "NODE_ENV=none webpack && node -r dotenv/config dist/index.js dotenv_config_path=.env.development.local",
     "format": "prettier . --write --ignore-path .gitignore",
     "lint": "eslint . --fix --ignore-path .gitignore",

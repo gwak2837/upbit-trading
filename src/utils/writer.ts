@@ -11,7 +11,7 @@ export const tickWriter = fs
     console.log(`${printNow()} tickWriter finish`)
   })
 
-tickWriter.write('Time, tick.tp, currentMoneyRatio, isTrading\n')
+tickWriter.write('Time, tick.tp, currentMoneyRatio\n')
 
 // order log 기록
 export const logWriter = fs
@@ -21,7 +21,7 @@ export const logWriter = fs
   })
 
 // 프로세스 상태 확인
-const tenMinutes = 600_000
+export const TEN_MINUTES = 600_000
 
 setInterval(() => {
   fs.stat(`docs/${startingDate.getTime()}-tick.csv`, (err, stats) => {
@@ -29,9 +29,9 @@ setInterval(() => {
 
     const now = new Date()
 
-    if (now.getTime() - stats.mtime.getTime() > tenMinutes)
+    if (now.getTime() - stats.mtime.getTime() > TEN_MINUTES)
       throw new Error(`파일 수정일: ${stats.mtime.toLocaleString()}. 현재: ${now.toLocaleString()}`)
 
     console.log(`${now.toLocaleString()} 정상 동작 중...`)
   })
-}, tenMinutes)
+}, TEN_MINUTES)
