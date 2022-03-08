@@ -12,14 +12,7 @@ import {
   ORDER_PRICE_UNIT,
   TICK_INTERVAL,
 } from './utils/config'
-import {
-  cancelOrder,
-  getAssets,
-  getMoneyRatio,
-  getOrder,
-  getOrders,
-  orderCoin,
-} from './utils/upbit'
+import { cancelOrder, getAssets, getMoneyRatio, getOrders, orderCoin } from './utils/upbit'
 import { TEN_MINUTES, logWriter, tickWriter } from './utils/writer'
 
 let tickIth = 0
