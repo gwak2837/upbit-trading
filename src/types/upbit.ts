@@ -7,6 +7,33 @@ export type Asset = {
   unit_currency: string
 }
 
+export type UpbitDeposit = {
+  type: string
+  uuid: string
+  currency: string
+  txid: string
+  state: string
+  created_at: string
+  done_at: string | null
+  amount: string
+  fee: string
+  transaction_type: string
+}
+
+export type UpbitCandle = {
+  market: string
+  candle_date_time_utc: string
+  candle_date_time_kst: string
+  opening_price: number
+  high_price: number
+  low_price: number
+  trade_price: number
+  timestamp: number
+  candle_acc_trade_price: number
+  candle_acc_trade_volume: number
+  first_day_of_period: string
+}
+
 export interface UpbitOrder {
   uuid: string
   side: string

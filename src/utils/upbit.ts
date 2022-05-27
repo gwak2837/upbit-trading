@@ -4,7 +4,14 @@ import { encode } from 'querystring'
 import { sign } from 'jsonwebtoken'
 import { v4 as uuidv4 } from 'uuid'
 
-import { Asset, UpbitError, UpbitOrder, UpbitOrderDetail } from '../types/upbit'
+import {
+  Asset,
+  UpbitCandle,
+  UpbitDeposit,
+  UpbitError,
+  UpbitOrder,
+  UpbitOrderDetail,
+} from '../types/upbit'
 import { UPBIT_API_URL, UPBIT_OPEN_API_ACCESS_KEY, UPBIT_OPEN_API_SECRET_KEY } from './config'
 import { fetchWithInterval } from '.'
 
@@ -31,7 +38,9 @@ function createToken(query?: string) {
 export function getAssets() {
   return fetchWithInterval<Asset[]>(UPBIT_API_URL + '/v1/accounts', {
     method: 'GET',
-    headers: { Authorization: `Bearer ${createToken()}` },
+    headers: {
+      Authorization: `Bearer ${createToken()}`,
+    },
   })
 }
 
@@ -40,7 +49,9 @@ export function getOrder(uuid: string) {
 
   return fetchWithInterval<UpbitOrderDetail>(UPBIT_API_URL + '/v1/order?' + query, {
     method: 'GET',
-    headers: { Authorization: `Bearer ${createToken(query)}` },
+    headers: {
+      Authorization: `Bearer ${createToken(query)}`,
+    },
   })
 }
 
@@ -54,13 +65,14 @@ export function getOrders(body: GetOrdersBody) {
 
   return fetchWithInterval<UpbitOrderDetail[] & UpbitError>(UPBIT_API_URL + '/v1/orders?' + query, {
     method: 'GET',
-    headers: { Authorization: `Bearer ${createToken(query)}` },
+    headers: {
+      Authorization: `Bearer ${createToken(query)}`,
+    },
   })
 }
 
 export function cancelOrder(uuid: string) {
-  const body = { uuid }
-  const query = encode(body)
+  const query = encode({ uuid })
 
   return fetchWithInterval<UpbitOrder[] & UpbitError>(UPBIT_API_URL + '/v1/order?' + query, {
     method: 'DELETE',
@@ -86,6 +98,49 @@ export function orderCoin(body: OrderCoinBody) {
       Authorization: `Bearer ${createToken(encode(body))}`,
     },
     body: JSON.stringify(body),
+  })
+}
+
+export function depositWon(amount: number) {
+  const body = { amount }
+
+  return fetchWithInterval<UpbitDeposit & UpbitError>(UPBIT_API_URL + '/v1/deposits/krw', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${createToken(encode(body))}`,
+    },
+    body: JSON.stringify(body),
+  })
+}
+
+export function getMonthCandle() {
+  return fetchWithInterval<UpbitCandle[] & UpbitError>(
+    UPBIT_API_URL + '/v1/candles/months?market=KRW-BTC',
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
+    }
+  )
+}
+
+export function getDepositHistory() {
+  const query = encode({
+    currency: 'KRW',
+    state: 'accepted',
+    order_by: 'desc',
+    limit: 10,
+  })
+
+  return fetchWithInterval<UpbitCandle[] & UpbitError>(UPBIT_API_URL + '/v1/deposits?' + query, {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      Authorization: `Bearer ${createToken(query)}`,
+    },
   })
 }
 
