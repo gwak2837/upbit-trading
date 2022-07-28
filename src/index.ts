@@ -29,7 +29,7 @@ let tickIth = 0
 let isTrading = false
 let isUpdatingMonthlyMinimum = false
 
-let monthlyMinimumPrice = 0
+let monthlyMinimumPrice = 100_000_000_000
 let assets: Asset[]
 getAssets().then((newAssets) => (assets = newAssets))
 
