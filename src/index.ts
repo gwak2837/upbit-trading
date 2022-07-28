@@ -11,6 +11,7 @@ import {
   MAX_MONEY_RATIO,
   MIN_MONEY_RATIO,
   ORDER_PRICE_UNIT,
+  SELLING_VOLUME,
   TICK_INTERVAL,
 } from './utils/config'
 import {
@@ -95,7 +96,7 @@ ws.on('message', async (data) => {
     // 코인 판매
     else if (currentMoneyRatio < MIN_MONEY_RATIO) {
       const sellingVolume = `${
-        Math.ceil((ORDER_PRICE_UNIT * 100_000_000) / tick.tp) / 100_000_000
+        Math.ceil((SELLING_VOLUME * 100_000_000) / tick.tp) / 100_000_000
       }`.padEnd(10, '0')
 
       const sellingResult = await orderCoin({

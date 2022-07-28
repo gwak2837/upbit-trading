@@ -8,6 +8,8 @@ export const ORDER_PRICE_UNIT = Number(process.env.ORDER_PRICE_UNIT)
 export const TICK_INTERVAL = Number(process.env.TICK_INTERVAL)
 export const DEPOSIT_BASE_UNIT = Number(process.env.DEPOSIT_BASE_UNIT)
 
+export const SELLING_VOLUME = ORDER_PRICE_UNIT * MAX_MONEY_RATIO / MIN_MONEY_RATIO
+
 if (!UPBIT_OPEN_API_ACCESS_KEY) throw new Error('Requires UPBIT_OPEN_API_ACCESS_KEY')
 if (!UPBIT_OPEN_API_SECRET_KEY) throw new Error('Requires UPBIT_OPEN_API_SECRET_KEY')
 if (!COIN_CODE) throw new Error('Requires COIN_CODE')
