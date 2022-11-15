@@ -18,8 +18,8 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
-COPY --from=builder /app/dist dist
+COPY --from=builder /app/out out
 
 EXPOSE $PORT
 
-ENTRYPOINT ["node", "dist/index.js"]
+ENTRYPOINT ["node", "out/index.js"]
