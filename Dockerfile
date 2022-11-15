@@ -7,7 +7,7 @@ WORKDIR /app
 
 COPY .yarn .yarn
 COPY src src
-COPY .yarnrc.yml package.json tsconfig.json webpack.config.js yarn.lock ./
+COPY .yarnrc.yml package.json tsconfig.json esbuild.js yarn.lock ./
 
 RUN yarn && yarn build
 
