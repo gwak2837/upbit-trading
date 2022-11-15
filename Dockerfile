@@ -9,7 +9,8 @@ COPY .yarn .yarn
 COPY src src
 COPY .yarnrc.yml package.json tsconfig.json esbuild.js yarn.lock ./
 
-RUN yarn && yarn build
+RUN yarn
+RUN yarn build
 
 # Install only dependency packages
 FROM node:18-alpine AS runner

@@ -25,18 +25,25 @@ import {
 } from './utils/upbit'
 import { TEN_MINUTES, logWriter, tickWriter } from './utils/writer'
 
-let tickIth = 0
+let tickIth = TICK_INTERVAL - 1
 let isTrading = false
 let isUpdatingMonthlyMinimum = false
 
 let monthlyMinimumPrice = 0
 let assets: Asset[]
-getAssets().then((newAssets) => (assets = newAssets))
+getAssets()
+  .then((newAssets) => {
+    console.log('👀 - newAssets', newAssets)
+    assets = newAssets
+    return 0
+  })
+  .catch((error) => console.error(error))
 
 const ws = new WebSocket('wss://api.upbit.com/websocket/v1')
 
 ws.on('open', () => {
   logWriter.write(`${printNow()}, websocket is opened`)
+  console.log(`${printNow()}, websocket is opened`)
 
   ws.send(
     JSON.stringify([
@@ -54,6 +61,7 @@ ws.on('open', () => {
     ])
   )
 }).on('close', () => {
+  console.log(`${printNow()}, websocket is closed`)
   logWriter.write(`${printNow()}, websocket is closed`)
   tickWriter.end()
   logWriter.end()
@@ -89,7 +97,9 @@ ws.on('message', async (data) => {
       })
 
       if (buyingResult.error) {
-        return logWriter.write(`${printNow()} bid error ${JSON.stringify(buyingResult.error)}\n`)
+        return logWriter.write(
+          `${printNow()} buying error  ${JSON.stringify(buyingResult.error)}\n`
+        )
       }
     }
 
@@ -108,24 +118,26 @@ ws.on('message', async (data) => {
       })
 
       if (sellingResult.error) {
-        return logWriter.write(`${printNow()} ask error ${JSON.stringify(sellingResult.error)}\n`)
+        return logWriter.write(
+          `${printNow()} selling error ${JSON.stringify(sellingResult.error)}\n`
+        )
       }
     }
 
     // 원화 입금 후 월 최저가격 갱신
-    if (monthlyMinimumPrice > tick.tp) {
-      depositWon(DEPOSIT_BASE_UNIT)
+    // if (monthlyMinimumPrice > tick.tp) {
+    //   depositWon(DEPOSIT_BASE_UNIT)
 
-      if (!isUpdatingMonthlyMinimum) {
-        isUpdatingMonthlyMinimum = true
+    //   if (!isUpdatingMonthlyMinimum) {
+    //     isUpdatingMonthlyMinimum = true
 
-        getMonthCandle()
-          .then((month: UpbitCandle[]) => (monthlyMinimumPrice = month[0].low_price))
-          .catch((error) => logWriter.write(`${printNow()}, ${JSON.stringify(error)}`))
+    //     getMonthCandle()
+    //       .then((month: UpbitCandle[]) => (monthlyMinimumPrice = month[0].low_price))
+    //       .catch((error) => logWriter.write(`${printNow()}, ${JSON.stringify(error)}`))
 
-        isUpdatingMonthlyMinimum = false
-      }
-    }
+    //     isUpdatingMonthlyMinimum = false
+    //   }
+    // }
 
     // 자산 업데이트
     assets = await getAssets()
