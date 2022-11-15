@@ -152,14 +152,14 @@ setInterval(async () => {
   }
 }, TEN_MINUTES)
 
-setInterval(() => {
-  if (!isUpdatingMonthlyMinimum) {
-    isUpdatingMonthlyMinimum = true
+// setInterval(() => {
+//   if (!isUpdatingMonthlyMinimum) {
+//     isUpdatingMonthlyMinimum = true
 
-    getMonthCandle()
-      .then((month: UpbitCandle[]) => (monthlyMinimumPrice = month[0].low_price))
-      .catch((error) => logWriter.write(`${printNow()}, ${JSON.stringify(error)}`))
+//     getMonthCandle()
+//       .then((month: UpbitCandle[]) => (monthlyMinimumPrice = month[0].low_price))
+//       .catch((error) => logWriter.write(`${printNow()}, ${JSON.stringify(error)}`))
 
-    isUpdatingMonthlyMinimum = false
-  }
-}, TEN_MINUTES)
+//     isUpdatingMonthlyMinimum = false
+//   }
+// }, TEN_MINUTES)
