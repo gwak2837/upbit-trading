@@ -22,4 +22,4 @@ COPY --from=builder /app/out out
 
 EXPOSE $PORT
 
-ENTRYPOINT ["node", "out/index.js"]
+ENTRYPOINT ["node", "out/index.cjs"]
