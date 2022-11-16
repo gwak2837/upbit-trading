@@ -5,20 +5,11 @@ import { printNow } from '.'
 const startingDate = new Date()
 
 // 매 n번째 tick 기록
-export const tickWriter = fs
-  .createWriteStream(`docs/${startingDate.getTime()}-tick.csv`)
-  .on('finish', () => {
-    console.log(`${printNow()} tickWriter finish`)
-  })
-
+export const tickWriter = fs.createWriteStream(`docs/${startingDate.getTime()}-tick.csv`)
 tickWriter.write('Time, tick.tp, currentMoneyRatio\n')
 
 // order log 기록
-export const logWriter = fs
-  .createWriteStream(`docs/${startingDate.getTime()}-log.txt`)
-  .on('finish', () => {
-    console.log(`${printNow()} logWriter finish`)
-  })
+export const logWriter = fs.createWriteStream(`docs/${startingDate.getTime()}-log.txt`)
 
 // 프로세스 상태 확인
 export const TEN_MINUTES = 600_000
@@ -29,9 +20,11 @@ setInterval(() => {
 
     const now = new Date()
 
-    if (now.getTime() - stats.mtime.getTime() > TEN_MINUTES)
-      throw new Error(`파일 수정일: ${stats.mtime.toLocaleString()}. 현재: ${now.toLocaleString()}`)
-
-    console.log(`${now.toLocaleString()} 정상 동작 중...`)
+    if (now.getTime() - stats.mtime.getTime() > TEN_MINUTES) {
+      logWriter.write(
+        `${printNow()}, 파일 수정일: ${stats.mtime.toLocaleString()}. 검사 시점: ${now.toLocaleString()}`
+      )
+      throw new Error()
+    }
   })
 }, TEN_MINUTES)

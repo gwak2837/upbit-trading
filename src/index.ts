@@ -3,33 +3,21 @@ import { exit } from 'process'
 import { v4 } from 'uuid'
 import WebSocket from 'ws'
 
-import { Asset, UpbitCandle } from './types/upbit'
+import { Asset } from './types/upbit'
 import { printNow } from './utils'
 import {
   COIN_CODE,
-  DEPOSIT_BASE_UNIT,
   MAX_MONEY_RATIO,
   MIN_MONEY_RATIO,
   ORDER_PRICE_UNIT,
-  SELLING_VOLUME,
   TICK_INTERVAL,
 } from './utils/config'
-import {
-  cancelOrder,
-  depositWon,
-  getAssets,
-  getMoneyRatio,
-  getMonthCandle,
-  getOrders,
-  orderCoin,
-} from './utils/upbit'
+import { cancelOrder, getAssets, getMoneyRatio, getOrders, orderCoin } from './utils/upbit'
 import { TEN_MINUTES, logWriter, tickWriter } from './utils/writer'
 
 let tickIth = TICK_INTERVAL - 1
 let isTrading = false
-let isUpdatingMonthlyMinimum = false
 
-let monthlyMinimumPrice = 0
 let assets: Asset[]
 getAssets()
   .then((newAssets) => {
@@ -42,8 +30,7 @@ getAssets()
 const ws = new WebSocket('wss://api.upbit.com/websocket/v1')
 
 ws.on('open', () => {
-  logWriter.write(`${printNow()}, websocket is opened`)
-  console.log(`${printNow()}, websocket is opened`)
+  logWriter.write(`${printNow()}, websocket is opened\n`)
 
   ws.send(
     JSON.stringify([
@@ -61,8 +48,8 @@ ws.on('open', () => {
     ])
   )
 }).on('close', () => {
-  console.log(`${printNow()}, websocket is closed`)
-  logWriter.write(`${printNow()}, websocket is closed`)
+  logWriter.write(`${printNow()}, websocket is closed\n`)
+
   tickWriter.end()
   logWriter.end()
   exit()
@@ -98,7 +85,7 @@ ws.on('message', async (data) => {
 
       if (buyingResult.error) {
         return logWriter.write(
-          `${printNow()} buying error  ${JSON.stringify(buyingResult.error)}\n`
+          `${printNow()}, buying error  ${JSON.stringify(buyingResult.error)}\n`
         )
       }
     }
@@ -106,7 +93,7 @@ ws.on('message', async (data) => {
     // 코인 판매
     else if (currentMoneyRatio < MIN_MONEY_RATIO) {
       const sellingVolume = `${
-        Math.ceil((SELLING_VOLUME * 100_000_000) / tick.tp) / 100_000_000
+        Math.ceil((ORDER_PRICE_UNIT * 100_000_000) / tick.tp) / 100_000_000
       }`.padEnd(10, '0')
 
       const sellingResult = await orderCoin({
@@ -119,34 +106,19 @@ ws.on('message', async (data) => {
 
       if (sellingResult.error) {
         return logWriter.write(
-          `${printNow()} selling error ${JSON.stringify(sellingResult.error)}\n`
+          `${printNow()}, selling error ${JSON.stringify(sellingResult.error)}\n`
         )
       }
     }
-
-    // 원화 입금 후 월 최저가격 갱신
-    // if (monthlyMinimumPrice > tick.tp) {
-    //   depositWon(DEPOSIT_BASE_UNIT)
-
-    //   if (!isUpdatingMonthlyMinimum) {
-    //     isUpdatingMonthlyMinimum = true
-
-    //     getMonthCandle()
-    //       .then((month: UpbitCandle[]) => (monthlyMinimumPrice = month[0].low_price))
-    //       .catch((error) => logWriter.write(`${printNow()}, ${JSON.stringify(error)}`))
-
-    //     isUpdatingMonthlyMinimum = false
-    //   }
-    // }
 
     // 자산 업데이트
     assets = await getAssets()
 
     isTrading = false
 
-    tickWriter.write(`${printNow()}, ${tick.tp}, ${Math.ceil(currentMoneyRatio * 1000) / 1000}\n`)
+    tickWriter.write(`${printNow()}, ${tick.tp}, ${Math.ceil(currentMoneyRatio * 100) / 100}\n`)
   } catch (error) {
-    logWriter.write(`${printNow()}, ${JSON.stringify(error)}`)
+    logWriter.write(`${printNow()}, ${JSON.stringify(error)}\n`)
   }
 })
 
@@ -160,18 +132,6 @@ setInterval(async () => {
       cancelOrder(order.uuid)
     }
   } catch (error) {
-    logWriter.write(`${printNow()}, ${JSON.stringify(error)}`)
+    logWriter.write(`${printNow()}, ${JSON.stringify(error)}\n`)
   }
 }, TEN_MINUTES)
-
-// setInterval(() => {
-//   if (!isUpdatingMonthlyMinimum) {
-//     isUpdatingMonthlyMinimum = true
-
-//     getMonthCandle()
-//       .then((month: UpbitCandle[]) => (monthlyMinimumPrice = month[0].low_price))
-//       .catch((error) => logWriter.write(`${printNow()}, ${JSON.stringify(error)}`))
-
-//     isUpdatingMonthlyMinimum = false
-//   }
-// }, TEN_MINUTES)
