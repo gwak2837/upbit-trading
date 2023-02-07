@@ -13,7 +13,8 @@ import {
   UpbitOrderDetail,
 } from '../types/upbit'
 import { UPBIT_API_URL, UPBIT_OPEN_API_ACCESS_KEY, UPBIT_OPEN_API_SECRET_KEY } from './config'
-import { fetchWithInterval } from '.'
+import { logWriter } from './writer'
+import { fetchWithInterval, printNow } from '.'
 
 function createToken(query?: string) {
   return query
@@ -71,15 +72,17 @@ export function getOrders(body: GetOrdersBody) {
   })
 }
 
-export function cancelOrder(uuid: string) {
+export async function cancelOrder(uuid: string) {
   const query = encode({ uuid })
 
-  return fetchWithInterval<UpbitOrder[] & UpbitError>(UPBIT_API_URL + '/v1/order?' + query, {
+  await fetchWithInterval<UpbitOrder[] & UpbitError>(UPBIT_API_URL + '/v1/order?' + query, {
     method: 'DELETE',
     headers: {
       Authorization: `Bearer ${createToken(query)}`,
     },
   })
+
+  logWriter.write(`${printNow()}, Cancel order\n`)
 }
 
 type OrderCoinBody = {

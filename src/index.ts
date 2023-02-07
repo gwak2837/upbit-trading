@@ -13,7 +13,7 @@ import {
   TICK_INTERVAL,
 } from './utils/config'
 import { cancelOrder, getAssets, getMoneyRatio, getOrders, orderCoin } from './utils/upbit'
-import { TEN_MINUTES, logWriter, tickWriter } from './utils/writer'
+import { TWENTY_MINUTES, logWriter, tickWriter } from './utils/writer'
 
 let tickIth = TICK_INTERVAL - 1
 let isTrading = false
@@ -21,7 +21,6 @@ let isTrading = false
 let assets: Asset[]
 getAssets()
   .then((newAssets) => {
-    console.log('👀 - newAssets', newAssets)
     assets = newAssets
     return 0
   })
@@ -116,7 +115,7 @@ ws.on('message', async (data) => {
 
     isTrading = false
 
-    tickWriter.write(`${printNow()}, ${tick.tp}, ${Math.ceil(currentMoneyRatio * 100) / 100}\n`)
+    tickWriter.write(`${printNow()}\n`)
   } catch (error) {
     logWriter.write(`${printNow()}, ${JSON.stringify(error)}\n`)
   }
@@ -134,4 +133,4 @@ setInterval(async () => {
   } catch (error) {
     logWriter.write(`${printNow()}, ${JSON.stringify(error)}\n`)
   }
-}, TEN_MINUTES)
+}, TWENTY_MINUTES)
