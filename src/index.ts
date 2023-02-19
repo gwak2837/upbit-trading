@@ -90,7 +90,7 @@ async function rebalanceAssets() {
 
     const orderVolume = rebalDiffEval / currPrice
     orderVolumes.push(Math.abs(orderVolume).toFixed(8))
-    orderSides.push(orderVolume > 0 ? 'ask' : 'bid')
+    orderSides.push(orderVolume > 0 ? 'bid' : 'ask')
   }
 
   // 리밸런싱
@@ -107,8 +107,7 @@ async function rebalanceAssets() {
     rebalancingOrders.push(order)
   }
 
-  const a = await Promise.all(rebalancingOrders)
-  console.log('👀 - a', a)
+  await Promise.all(rebalancingOrders)
 
   // 결과
   // const table = {
