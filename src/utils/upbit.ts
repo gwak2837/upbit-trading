@@ -2,19 +2,13 @@ import { createHash } from 'crypto'
 import { encode } from 'querystring'
 
 import { sign } from 'jsonwebtoken'
+import fetch from 'node-fetch'
 import { v4 as uuidv4 } from 'uuid'
 
-import {
-  Asset,
-  UpbitCandle,
-  UpbitDeposit,
-  UpbitError,
-  UpbitOrder,
-  UpbitOrderDetail,
-} from '../types/upbit'
+import { Asset, UpbitCandle, UpbitError, UpbitOrder, UpbitOrderDetail } from '../types/upbit'
 import { UPBIT_API_URL, UPBIT_OPEN_API_ACCESS_KEY, UPBIT_OPEN_API_SECRET_KEY } from './config'
 import { logWriter } from './writer'
-import { fetchWithInterval, printNow } from '.'
+import { printNow } from '.'
 
 function createToken(query?: string) {
   return query
@@ -36,53 +30,78 @@ function createToken(query?: string) {
       )
 }
 
-export function getAssets() {
-  return fetchWithInterval<Asset[]>(UPBIT_API_URL + '/v1/accounts', {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${createToken()}`,
-    },
-  })
+export async function getAssets() {
+  return (await (
+    await fetch(`${UPBIT_API_URL}/v1/accounts`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${createToken()}`,
+      },
+    })
+  ).json()) as Asset[] & UpbitError
 }
 
-export function getOrder(uuid: string) {
-  const query = encode({ uuid })
+type MinuteCandleInput = {
+  market: string
+  to?: string
+  count?: number
+}
 
-  return fetchWithInterval<UpbitOrderDetail>(UPBIT_API_URL + '/v1/order?' + query, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${createToken(query)}`,
-    },
-  })
+export async function getMinuteCandles(unit: number, body: MinuteCandleInput) {
+  let query = encode(body)
+
+  return (await (
+    await fetch(`${UPBIT_API_URL}/v1/candles/minutes/${unit}?${query}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${createToken(query)}`,
+      },
+    })
+  ).json()) as UpbitCandle[] & UpbitError
 }
 
 type GetOrdersBody = {
   market: string
+  state?: string
+  states?: string[]
+  page?: number
   limit?: number
 }
 
-export function getOrders(body: GetOrdersBody) {
-  const query = encode(body)
+export async function getOrders(body: GetOrdersBody) {
+  const states = body.states
+  delete body.states
 
-  return fetchWithInterval<UpbitOrderDetail[] & UpbitError>(UPBIT_API_URL + '/v1/orders?' + query, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${createToken(query)}`,
-    },
-  })
+  let query = encode(body)
+
+  if (states) {
+    query += states.map((state) => `&states[]=${state}`).join('')
+  }
+
+  return (await (
+    await fetch(`${UPBIT_API_URL}/v1/orders?${query}`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${createToken(query)}`,
+      },
+    })
+  ).json()) as UpbitOrderDetail[] & UpbitError
 }
 
 export async function cancelOrder(uuid: string) {
   const query = encode({ uuid })
 
-  await fetchWithInterval<UpbitOrder[] & UpbitError>(UPBIT_API_URL + '/v1/order?' + query, {
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${createToken(query)}`,
-    },
-  })
-
   logWriter.write(`${printNow()}, Cancel order\n`)
+
+  return (await (
+    await fetch(`${UPBIT_API_URL}/v1/order?${query}`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${createToken(query)}`,
+      },
+    })
+  ).json()) as UpbitOrder[] & UpbitError
 }
 
 type OrderCoinBody = {
@@ -93,58 +112,17 @@ type OrderCoinBody = {
   volume?: string
 }
 
-export function orderCoin(body: OrderCoinBody) {
-  return fetchWithInterval<UpbitOrder & UpbitError>(UPBIT_API_URL + '/v1/orders', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${createToken(encode(body))}`,
-    },
-    body: JSON.stringify(body),
-  })
-}
-
-export function depositWon(amount: number) {
-  const body = { amount }
-
-  return fetchWithInterval<UpbitDeposit & UpbitError>(UPBIT_API_URL + '/v1/deposits/krw', {
-    method: 'POST',
-    headers: {
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${createToken(encode(body))}`,
-    },
-    body: JSON.stringify(body),
-  })
-}
-
-export function getMonthCandle() {
-  return fetchWithInterval<UpbitCandle[] & UpbitError>(
-    UPBIT_API_URL + '/v1/candles/months?market=KRW-BTC',
-    {
-      method: 'GET',
+export async function orderCoin(body: OrderCoinBody) {
+  return (await (
+    await fetch(`${UPBIT_API_URL}/v1/orders`, {
+      method: 'POST',
       headers: {
-        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${createToken(encode(body))}`,
       },
-    }
-  )
-}
-
-export function getDepositHistory() {
-  const query = encode({
-    currency: 'KRW',
-    state: 'accepted',
-    order_by: 'desc',
-    limit: 10,
-  })
-
-  return fetchWithInterval<UpbitCandle[] & UpbitError>(UPBIT_API_URL + '/v1/deposits?' + query, {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${createToken(query)}`,
-    },
-  })
+      body: JSON.stringify(body),
+    })
+  ).json()) as UpbitOrder & UpbitError
 }
 
 export function ceilUpbitPrice(price: number) {

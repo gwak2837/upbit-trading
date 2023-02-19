@@ -14,8 +14,8 @@
   "scripts": {
     "dev": "src/dev.sh",
     "build": "NODE_ENV=production node esbuild.js",
-    "start": "NODE_ENV=production node -r dotenv/config dist/index.js dotenv_config_path=.env",
-    "test": "NODE_ENV=none webpack && node -r dotenv/config dist/index.js dotenv_config_path=.env.development.local",
+    "start": "NODE_ENV=production node -r dotenv/config out/index.cjs dotenv_config_path=.env",
+    "test": "NODE_ENV=production node esbuild.test.js && NODE_ENV=production node -r dotenv/config out/index.cjs dotenv_config_path=.env.development.local",
     "format": "prettier . --write --ignore-path .gitignore",
     "lint": "eslint . --fix --ignore-path .gitignore",
     "type": "tsc --pretty --noEmit",
@@ -24,21 +24,19 @@
   },
   "dependencies": {
     "dotenv": "^16.0.3",
-    "jsonwebtoken": "^8.5.1",
+    "jsonwebtoken": "^9.0.0",
     "node-fetch": "^3.3.0",
-    "uuid": "^8.3.2",
-    "ws": "^8.11.0"
+    "uuid": "^9.0.0",
+    "ws": "^8.12.1"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^8.5.9",
-    "@types/node": "^18.11.19",
-    "@types/uuid": "^8.3.4",
+    "@types/node": "^18.14.0",
+    "@types/uuid": "^9.0.0",
     "@types/ws": "^8.5.4",
     "@typescript-eslint/eslint-plugin": "^5.42.1",
     "@typescript-eslint/parser": "^5.42.1",
-    "@yarnpkg/esbuild-plugin-pnp": "^3.0.0-rc.15",
     "esbuild": "^0.15.18",
-    "esbuild-node-externals": "^1.5.0",
     "eslint": "^8.27.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-config-standard": "^16.0.3",

@@ -1,136 +1,146 @@
-import { exit } from 'process'
+import { UpbitCandle, UpbitError, UpbitOrderDetail } from './types/upbit'
+import { sleep } from './utils'
+import { cancelOrder, getAssets, getMinuteCandles, getOrders, orderCoin } from './utils/upbit'
 
-import { v4 } from 'uuid'
-import WebSocket from 'ws'
+const marketCodes = ['KRW-BTC', 'KRW-XRP', 'KRW-DOGE', 'KRW-TRX']
+const targetRatios = [20, 20, 20, 20, 20]
 
-import { Asset } from './types/upbit'
-import { printNow } from './utils'
-import {
-  COIN_CODE,
-  MAX_MONEY_RATIO,
-  MIN_MONEY_RATIO,
-  ORDER_PRICE_UNIT,
-  TICK_INTERVAL,
-} from './utils/config'
-import { cancelOrder, getAssets, getMoneyRatio, getOrders, orderCoin } from './utils/upbit'
-import { TWENTY_MINUTES, logWriter, tickWriter } from './utils/writer'
+const totalTargetRatio = targetRatios.reduce((acc, cur) => acc + cur, 0)
+const coinCodes = marketCodes.map((market) => market.split('-')[1])
+const assetCodes = [...coinCodes, 'KRW']
 
-let tickIth = TICK_INTERVAL - 1
-let isTrading = false
+async function rebalanceAssets() {
+  const candles = marketCodes.map((market) => getMinuteCandles(1, { market }))
+  const orders = marketCodes.map((market) => getOrders({ market }))
 
-let assets: Asset[]
-getAssets()
-  .then((newAssets) => {
-    assets = newAssets
-    return 0
-  })
-  .catch((error) => console.error(error))
+  // 가격 정보, 자산 정보 불러오기
+  const result = await Promise.all([getAssets(), ...candles, ...orders])
 
-const ws = new WebSocket('wss://api.upbit.com/websocket/v1')
+  const currAssets = result[0]
+  const currCandles = result.slice(1, candles.length + 1) as (UpbitCandle[] & UpbitError)[]
+  const waitingOrders = result.slice(currCandles.length + 1) as (UpbitOrderDetail[] & UpbitError)[]
 
-ws.on('open', () => {
-  logWriter.write(`${printNow()}, websocket is opened\n`)
+  // 미체결 주문 모두 취소
+  await Promise.all(waitingOrders.flat().map((order) => cancelOrder(order.uuid)))
 
-  ws.send(
-    JSON.stringify([
-      {
-        ticket: v4(),
-      },
-      {
-        type: 'ticker',
-        codes: [COIN_CODE],
-        isOnlyRealtime: true,
-      },
-      {
-        format: 'SIMPLE',
-      },
-    ])
-  )
-}).on('close', () => {
-  logWriter.write(`${printNow()}, websocket is closed\n`)
+  // 코인 평가금액 계산
+  const currPrices: number[] = []
+  const currVolumes: number[] = []
+  const currEvals: number[] = []
 
-  tickWriter.end()
-  logWriter.end()
-  exit()
-})
-
-ws.on('message', async (data) => {
-  if (isTrading) return
-
-  // 매 TICK_INTERVAL 주기마다 실행
-  tickIth = tickIth++ < TICK_INTERVAL ? tickIth : 1
-  if (tickIth !== TICK_INTERVAL) return
-
-  const tick = JSON.parse(data.toString('utf-8'))
-
-  try {
-    const currentMoneyRatio = getMoneyRatio(assets, tick.tp)
-
-    isTrading = true
-
-    // 코인 구매
-    if (currentMoneyRatio > MAX_MONEY_RATIO) {
-      const buyingVolume = `${
-        Math.ceil((ORDER_PRICE_UNIT * 100_000_000) / tick.tp) / 100_000_000
-      }`.padEnd(10, '0')
-
-      const buyingResult = await orderCoin({
-        market: COIN_CODE,
-        side: 'bid',
-        volume: buyingVolume,
-        price: `${tick.tp}`,
-        ord_type: 'limit',
-      })
-
-      if (buyingResult.error) {
-        return logWriter.write(
-          `${printNow()}, buying error  ${JSON.stringify(buyingResult.error)}\n`
-        )
-      }
+  for (let i = 0; i < currCandles.length; i++) {
+    const candle = currCandles[i]
+    if (candle.error) {
+      console.error('👀 - candle.error', candle.error)
+      break
     }
 
-    // 코인 판매
-    else if (currentMoneyRatio < MIN_MONEY_RATIO) {
-      const sellingVolume = `${
-        Math.ceil((ORDER_PRICE_UNIT * 100_000_000) / tick.tp) / 100_000_000
-      }`.padEnd(10, '0')
+    const coinPrice = candle[0].trade_price
+    currPrices.push(coinPrice)
 
-      const sellingResult = await orderCoin({
-        market: COIN_CODE,
-        side: 'ask',
-        volume: sellingVolume,
-        price: `${tick.tp}`,
-        ord_type: 'limit',
-      })
-
-      if (sellingResult.error) {
-        return logWriter.write(
-          `${printNow()}, selling error ${JSON.stringify(sellingResult.error)}\n`
-        )
-      }
+    const coin = currAssets.find((asset) => asset.currency === coinCodes[i])
+    if (!coin) {
+      currVolumes.push(0)
+      currEvals.push(0)
+      continue
     }
 
-    // 자산 업데이트
-    assets = await getAssets()
-
-    isTrading = false
-
-    tickWriter.write(`${printNow()}\n`)
-  } catch (error) {
-    logWriter.write(`${printNow()}, ${JSON.stringify(error)}\n`)
+    const coinBalance = +coin.balance
+    currVolumes.push(coinBalance)
+    currEvals.push(coinBalance * coinPrice)
   }
-})
 
-setInterval(async () => {
-  try {
-    const orders = await getOrders({
-      market: COIN_CODE,
-      limit: 10,
+  // 원화 잔액 계산
+  const cash = currAssets.find((asset) => asset.currency === 'KRW')
+  currPrices.push(1)
+  currVolumes.push(+cash!.balance)
+  currEvals.push(+cash!.balance)
+
+  const totalCurrEval = currEvals.reduce((acc, cur) => acc + cur, 0)
+
+  // 리밸런싱 금액 계산
+  const currRatios: number[] = []
+  const targetEvals: number[] = []
+  const rebalDiffEvals: number[] = []
+  const rebalDiffRatios: number[] = []
+  const orderVolumes: string[] = []
+  const orderSides: ('ask' | 'bid')[] = []
+
+  for (let i = 0; i < targetRatios.length; i++) {
+    const currPrice = currPrices[i]
+    const currEval = currEvals[i]
+    const targetRatio = targetRatios[i]
+
+    const currRatio = (100 * currEval) / totalCurrEval
+    currRatios.push(currRatio)
+
+    const targetEval = (totalCurrEval * targetRatio) / totalTargetRatio
+    targetEvals.push(targetEval)
+
+    const rebalDiffEval = targetEval - currEval
+    if (Math.abs(rebalDiffEval) < 5050) return
+    rebalDiffEvals.push(rebalDiffEval)
+
+    const rebalDiffRatio = targetRatio - currRatio
+    if (Math.abs(rebalDiffRatio) < 0.1) return
+    rebalDiffRatios.push(rebalDiffRatio)
+
+    if (i === targetRatios.length - 1) continue
+
+    const orderVolume = rebalDiffEval / currPrice
+    orderVolumes.push(Math.abs(orderVolume).toFixed(8))
+    orderSides.push(orderVolume > 0 ? 'ask' : 'bid')
+  }
+
+  // 리밸런싱
+  const a = []
+
+  for (let i = 0; i < orderSides.length; i++) {
+    const b = orderCoin({
+      market: marketCodes[i],
+      ord_type: 'limit',
+      side: orderSides[i],
+      price: String(currPrices[i]),
+      volume: orderVolumes[i],
     })
-    for (const order of orders) {
-      cancelOrder(order.uuid)
-    }
-  } catch (error) {
-    logWriter.write(`${printNow()}, ${JSON.stringify(error)}\n`)
+    a.push(b)
   }
-}, TWENTY_MINUTES)
+
+  await Promise.all(a)
+
+  // 결과
+  // const table = {
+  //   currPrice: new Table(currPrices),
+  //   currVolume: new Table(currVolumes),
+  //   currEval: new Table(currEvals.map((currEval) => Math.floor(currEval))),
+  //   currRatio: new Table(currRatios.map((currRatio) => +currRatio.toFixed(2))),
+  //   '': [],
+  //   targetEval: new Table(targetEvals.map((targetEval) => Math.floor(targetEval))),
+  //   targetRatio: new Table(targetRatios),
+  //   ' ': [],
+  //   rebalDiffEval: new Table(rebalDiffEvals.map((rebalDiffEval) => Math.floor(rebalDiffEval))),
+  //   rebalDiffRatio: new Table(rebalDiffRatios.map((rebalDiffRatio) => +rebalDiffRatio.toFixed(2))),
+  //   '  ': [],
+  //   orderSide: new Table(orderSides),
+  //   orderVolume: new Table(orderVolumes),
+  // }
+  // console.table(table, assetCodes)
+}
+
+class Table {
+  constructor(arr: (number | string)[]) {
+    for (let i = 0; i < assetCodes.length; i++) {
+      const element = arr[i]
+      ;(this as any)[assetCodes[i]] = element
+    }
+  }
+}
+
+async function main() {
+  while (true) {
+    await rebalanceAssets()
+    await sleep(10_000)
+  }
+}
+
+main()

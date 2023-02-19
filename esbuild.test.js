@@ -8,7 +8,7 @@ const NODE_ENV = process.env.NODE_ENV
 esbuild
   .build({
     bundle: true,
-    entryPoints: ['src/index.ts'],
+    entryPoints: ['test/index.ts'],
     loader: { '.ts': 'ts' },
     metafile: true,
     minify: NODE_ENV === 'production',
