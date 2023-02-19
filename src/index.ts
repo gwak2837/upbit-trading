@@ -109,23 +109,27 @@ async function rebalanceAssets() {
 
   await Promise.all(rebalancingOrders)
 
-  // 결과
-  // const table = {
-  //   currPrice: new Table(currPrices),
-  //   currVolume: new Table(currVolumes),
-  //   currEval: new Table(currEvals.map((currEval) => Math.floor(currEval))),
-  //   currRatio: new Table(currRatios.map((currRatio) => +currRatio.toFixed(2))),
-  //   '': [],
-  //   targetEval: new Table(targetEvals.map((targetEval) => Math.floor(targetEval))),
-  //   targetRatio: new Table(targetRatios),
-  //   ' ': [],
-  //   rebalDiffEval: new Table(rebalDiffEvals.map((rebalDiffEval) => Math.floor(rebalDiffEval))),
-  //   rebalDiffRatio: new Table(rebalDiffRatios.map((rebalDiffRatio) => +rebalDiffRatio.toFixed(2))),
-  //   '  ': [],
-  //   orderSide: new Table(orderSides),
-  //   orderVolume: new Table(orderVolumes),
-  // }
-  // console.table(table, assetCodes)
+  if (process.env.NODE_ENV === 'development') {
+    // 결과
+    const table = {
+      currPrice: new Table(currPrices),
+      currVolume: new Table(currVolumes),
+      currEval: new Table(currEvals.map((currEval) => Math.floor(currEval))),
+      currRatio: new Table(currRatios.map((currRatio) => +currRatio.toFixed(2))),
+      '': [],
+      targetEval: new Table(targetEvals.map((targetEval) => Math.floor(targetEval))),
+      targetRatio: new Table(targetRatios),
+      ' ': [],
+      rebalDiffEval: new Table(rebalDiffEvals.map((rebalDiffEval) => Math.floor(rebalDiffEval))),
+      rebalDiffRatio: new Table(
+        rebalDiffRatios.map((rebalDiffRatio) => +rebalDiffRatio.toFixed(2))
+      ),
+      '  ': [],
+      orderSide: new Table(orderSides),
+      orderVolume: new Table(orderVolumes),
+    }
+    console.table(table, assetCodes)
+  }
 }
 
 class Table {
