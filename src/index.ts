@@ -79,11 +79,9 @@ async function rebalanceAssets() {
     targetEvals.push(targetEval)
 
     const rebalDiffEval = targetEval - currEval
-    if (Math.abs(rebalDiffEval) < 5050) return
     rebalDiffEvals.push(rebalDiffEval)
 
     const rebalDiffRatio = targetRatio - currRatio
-    if (Math.abs(rebalDiffRatio) < 0.1) return
     rebalDiffRatios.push(rebalDiffRatio)
 
     if (i === targetRatios.length - 1) continue
@@ -97,6 +95,8 @@ async function rebalanceAssets() {
   const rebalancingOrders = []
 
   for (let i = 0; i < orderSides.length; i++) {
+    if (Math.abs(rebalDiffEvals[i]) < 5050 || Math.abs(rebalDiffRatios[i]) < 0.1) continue
+
     const order = orderCoin({
       market: marketCodes[i],
       ord_type: 'limit',
@@ -107,8 +107,7 @@ async function rebalanceAssets() {
     rebalancingOrders.push(order)
   }
 
-  const a = await Promise.all(rebalancingOrders)
-  console.log('👀 - a', a)
+  await Promise.all(rebalancingOrders)
 
   // 결과
   // const table = {
