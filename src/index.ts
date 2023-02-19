@@ -107,7 +107,8 @@ async function rebalanceAssets() {
     rebalancingOrders.push(order)
   }
 
-  await Promise.all(rebalancingOrders)
+  const a = await Promise.all(rebalancingOrders)
+  console.log('👀 - a', a)
 
   // 결과
   // const table = {
