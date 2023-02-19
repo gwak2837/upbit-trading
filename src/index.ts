@@ -1,5 +1,6 @@
 import { UpbitCandle, UpbitError, UpbitOrderDetail } from './types/upbit'
 import { printNow, sleep } from './utils'
+import { REBALANCING_CHECK_INTERVAL } from './utils/config'
 import { cancelOrder, getAssets, getMinuteCandles, getOrders, orderCoin } from './utils/upbit'
 import { logWriter, tickWriter } from './utils/writer'
 
@@ -149,7 +150,7 @@ async function main() {
     } catch (error) {
       logWriter.write(`${printNow()}, ${JSON.stringify(error)}\n`)
     }
-    await sleep(60_000)
+    await sleep(process.env.NODE_ENV === 'production' ? +REBALANCING_CHECK_INTERVAL : 6_000)
   }
 }
 
