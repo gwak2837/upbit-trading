@@ -93,20 +93,20 @@ async function rebalanceAssets() {
   }
 
   // 리밸런싱
-  const a = []
+  const rebalancingOrders = []
 
   for (let i = 0; i < orderSides.length; i++) {
-    const b = orderCoin({
+    const order = orderCoin({
       market: marketCodes[i],
       ord_type: 'limit',
       side: orderSides[i],
       price: String(currPrices[i]),
       volume: orderVolumes[i],
     })
-    a.push(b)
+    rebalancingOrders.push(order)
   }
 
-  await Promise.all(a)
+  await Promise.all(rebalancingOrders)
 
   // 결과
   // const table = {

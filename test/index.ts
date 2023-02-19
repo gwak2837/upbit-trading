@@ -3,18 +3,7 @@
 /* eslint-disable no-console */
 
 import { UpbitCandle, UpbitError } from '../src/types/upbit'
-import { COIN_CODE, ORDER_PRICE_UNIT } from '../src/utils/config'
-import {
-  cancelOrder,
-  depositWon,
-  getAssets,
-  getDepositHistory,
-  getMinuteCandles,
-  getMonthCandle,
-  getOrder,
-  getOrders,
-  orderCoin,
-} from '../src/utils/upbit'
+import { getAssets, getMinuteCandles } from '../src/utils/upbit'
 
 // getAssets().then((asset) => console.log('👀 - asset', asset))
 
@@ -103,31 +92,6 @@ Promise.all([getAssets(), ...candles]).then((result) => {
     orderVolumes.push(Math.abs(orderVolume).toFixed(8))
     orderSides.push(orderVolume > 0 ? 'ask' : 'bid')
   }
-
-  // 결과
-  const table = {
-    currPrice: new Table(currPrices),
-    currVolume: new Table(currVolumes),
-    currEval: new Table(currEvals.map((currEval) => Math.floor(currEval))),
-    currRatio: new Table(currRatios.map((currRatio) => +currRatio.toFixed(2))),
-    '': [],
-    targetEval: new Table(targetEvals.map((targetEval) => Math.floor(targetEval))),
-    targetRatio: new Table(targetRatios),
-    ' ': [],
-    rebalDiffEval: new Table(rebalDiffEvals.map((rebalDiffEval) => Math.floor(rebalDiffEval))),
-    rebalDiffRatio: new Table(rebalDiffRatios.map((rebalDiffRatio) => +rebalDiffRatio.toFixed(2))),
-    '  ': [],
-    orderSide: new Table(orderSides),
-    orderVolume: new Table(orderVolumes),
-  }
-  console.table(table, assetCodes)
 })
-
-function Table(arr: (number | string)[]) {
-  for (let i = 0; i < assetCodes.length; i++) {
-    const element = arr[i]
-    this[assetCodes[i]] = element
-  }
-}
 
 // -는 위로 +는 아래로
