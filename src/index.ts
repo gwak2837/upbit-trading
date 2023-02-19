@@ -1,6 +1,7 @@
 import { UpbitCandle, UpbitError, UpbitOrderDetail } from './types/upbit'
-import { sleep } from './utils'
+import { printNow, sleep } from './utils'
 import { cancelOrder, getAssets, getMinuteCandles, getOrders, orderCoin } from './utils/upbit'
+import { logWriter, tickWriter } from './utils/writer'
 
 const marketCodes = ['KRW-BTC', 'KRW-XRP', 'KRW-DOGE', 'KRW-TRX']
 const targetRatios = [20, 20, 20, 20, 20]
@@ -138,7 +139,12 @@ class Table {
 
 async function main() {
   while (true) {
-    await rebalanceAssets()
+    try {
+      await rebalanceAssets()
+      tickWriter.write(`${printNow()}\n`)
+    } catch (error) {
+      logWriter.write(`${printNow()}, ${JSON.stringify(error)}\n`)
+    }
     await sleep(10_000)
   }
 }

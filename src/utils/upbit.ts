@@ -78,6 +78,8 @@ export async function getOrders(body: GetOrdersBody) {
     query += states.map((state) => `&states[]=${state}`).join('')
   }
 
+  logWriter.write(`${printNow()}, Order\n`)
+
   return (await (
     await fetch(`${UPBIT_API_URL}/v1/orders?${query}`, {
       method: 'GET',
