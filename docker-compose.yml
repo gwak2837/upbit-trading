@@ -6,7 +6,7 @@ services:
     container_name: upbit-trading-app
     env_file: .env
     image: upbit-trading-app:latest
-    restart: unless-stopped
+    restart: on-failure
     ports:
       - $PORT:$PORT
     volumes:
