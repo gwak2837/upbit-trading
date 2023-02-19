@@ -91,24 +91,6 @@ async function rebalanceAssets() {
     orderSides.push(orderVolume > 0 ? 'bid' : 'ask')
   }
 
-  // 리밸런싱
-  const rebalancingOrders = []
-
-  for (let i = 0; i < orderSides.length; i++) {
-    if (Math.abs(rebalDiffEvals[i]) < 5050 || Math.abs(rebalDiffRatios[i]) < 0.1) continue
-
-    const order = orderCoin({
-      market: marketCodes[i],
-      ord_type: 'limit',
-      side: orderSides[i],
-      price: String(currPrices[i]),
-      volume: orderVolumes[i],
-    })
-    rebalancingOrders.push(order)
-  }
-
-  await Promise.all(rebalancingOrders)
-
   if (process.env.NODE_ENV === 'development') {
     // 결과
     const table = {
@@ -129,6 +111,24 @@ async function rebalanceAssets() {
       orderVolume: new Table(orderVolumes),
     }
     console.table(table, assetCodes)
+  } else if (process.env.NODE_ENV === 'production') {
+    // 리밸런싱
+    const rebalancingOrders = []
+
+    for (let i = 0; i < orderSides.length; i++) {
+      if (Math.abs(rebalDiffEvals[i]) < 5050 || Math.abs(rebalDiffRatios[i]) < 0.1) continue
+
+      const order = orderCoin({
+        market: marketCodes[i],
+        ord_type: 'limit',
+        side: orderSides[i],
+        price: String(currPrices[i]),
+        volume: orderVolumes[i],
+      })
+      rebalancingOrders.push(order)
+    }
+
+    await Promise.all(rebalancingOrders)
   }
 }
 
@@ -149,7 +149,7 @@ async function main() {
     } catch (error) {
       logWriter.write(`${printNow()}, ${JSON.stringify(error)}\n`)
     }
-    await sleep(10_000)
+    await sleep(60_000)
   }
 }
 
