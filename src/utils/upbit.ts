@@ -131,13 +131,11 @@ export async function getOrders(body: GetOrdersBody) {
     return null
   }
 
-  return result
+  return result as UpbitOrderDetail[]
 }
 
 export async function cancelOrder(uuid: string) {
   const query = encode({ uuid })
-
-  logWriter.write(`${printNow()}, Cancel order ${uuid}\n`)
 
   await rateLimit()
 
@@ -153,14 +151,14 @@ export async function cancelOrder(uuid: string) {
     return null
   }
 
-  const result = (await response.json()) as UpbitOrder[] & UpbitError
+  const result = (await response.json()) as UpbitOrder & UpbitError
 
   if (result.error) {
     logWriter.write(`${printNow()}, ${result.error}\n`)
     return null
   }
 
-  return result as UpbitOrder[]
+  return result as UpbitOrder
 }
 
 type OrderCoinBody = {

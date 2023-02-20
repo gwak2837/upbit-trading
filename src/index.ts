@@ -32,7 +32,21 @@ async function rebalanceAsset(market: string) {
   if (!currAssets) return
 
   // 미체결 주문 모두 취소
-  await Promise.all(waitingOrders.flat().map((order) => cancelOrder(order.uuid)))
+  const i = marketCodes.findIndex((marketCode) => marketCode === market)
+  if (i === -1) return
+
+  const coinCode = coinCodes[i]
+
+  if (waitingOrders.length !== 0) {
+    await Promise.all(waitingOrders.map((order) => cancelOrder(order.uuid)))
+
+    const newInterval = rebalancingIntervals[i] * 1.1
+    rebalancingIntervals[i] = newInterval
+
+    logWriter.write(`${printNow()}, ${coinCode} 주문 취소, 리밸런싱 주기: ${newInterval}\n`)
+  } else {
+    rebalancingIntervals[i] -= 1000
+  }
 
   // 자산 평가금액 계산
   const currCandles = result.slice(2) as (UpbitCandle[] | null)[]
@@ -48,7 +62,7 @@ async function rebalanceAsset(market: string) {
     const coinPrice = candle[0].trade_price
     currPrices.push(coinPrice)
 
-    const coin = currAssets.find((asset) => asset.currency === coinCodes[i])
+    const coin = currAssets.find((asset) => asset.currency === coinCode)
 
     if (coin) {
       const coinBalance = +coin.balance
@@ -68,9 +82,6 @@ async function rebalanceAsset(market: string) {
   const totalCurrEval = currEvals.reduce((acc, cur) => acc + cur, 0)
 
   // 리밸런싱 금액 계산
-  const i = marketCodes.findIndex((marketCode) => marketCode === market)
-  if (i === -1) return
-
   const currPrice = currPrices[i]
   const currEval = currEvals[i]
   const currRatio = (100 * currEval) / totalCurrEval
