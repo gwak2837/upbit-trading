@@ -526,6 +526,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"async-sema@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "async-sema@npm:3.1.1"
+  checksum: 07b8c51f6cab107417ecdd8126b7a9fe5a75151b7f69fdd420dcc8ee08f9e37c473a217247e894b56e999b088b32e902dbe41637e4e9b594d3f8dfcdddfadc5e
+  languageName: node
+  linkType: hard
+
 "balanced-match@npm:^1.0.0":
   version: 1.0.2
   resolution: "balanced-match@npm:1.0.2"
@@ -1030,18 +1037,6 @@ __metadata:
   version: 0.15.18
   resolution: "esbuild-netbsd-64@npm:0.15.18"
   conditions: os=netbsd & cpu=x64
-  languageName: node
-  linkType: hard
-
-"esbuild-node-externals@npm:^1.6.0":
-  version: 1.6.0
-  resolution: "esbuild-node-externals@npm:1.6.0"
-  dependencies:
-    find-up: ^5.0.0
-    tslib: ^2.4.1
-  peerDependencies:
-    esbuild: 0.12 - 0.16
-  checksum: dacc96228e610a391318c4fa46b2dfd2a923ab5819bff1b1e5ae92799d1eda18a8efc1836216a157fd5ab6a7bf65596f231e261b1bf18bfc23f5b7c850ee8c07
   languageName: node
   linkType: hard
 
@@ -3150,13 +3145,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.4.1":
-  version: 2.5.0
-  resolution: "tslib@npm:2.5.0"
-  checksum: ae3ed5f9ce29932d049908ebfdf21b3a003a85653a9a140d614da6b767a93ef94f460e52c3d787f0e4f383546981713f165037dc2274df212ea9f8a4541004e1
-  languageName: node
-  linkType: hard
-
 "tsutils@npm:^3.21.0":
   version: 3.21.0
   resolution: "tsutils@npm:3.21.0"
@@ -3251,9 +3239,9 @@ __metadata:
     "@types/ws": ^8.5.4
     "@typescript-eslint/eslint-plugin": ^5.42.1
     "@typescript-eslint/parser": ^5.42.1
+    async-sema: ^3.1.1
     dotenv: ^16.0.3
     esbuild: ^0.15.18
-    esbuild-node-externals: ^1.6.0
     eslint: ^8.27.0
     eslint-config-prettier: ^8.5.0
     eslint-config-standard: ^16.0.3

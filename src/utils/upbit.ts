@@ -1,14 +1,17 @@
 import { createHash } from 'crypto'
 import { encode } from 'querystring'
 
+import { RateLimit } from 'async-sema'
 import { sign } from 'jsonwebtoken'
 import fetch from 'node-fetch'
 import { v4 as uuidv4 } from 'uuid'
 
 import { Asset, UpbitCandle, UpbitError, UpbitOrder, UpbitOrderDetail } from '../types/upbit'
-import { UPBIT_API_URL, UPBIT_OPEN_API_ACCESS_KEY, UPBIT_OPEN_API_SECRET_KEY } from './config'
+import { UPBIT_API_URL, UPBIT_OPEN_API_ACCESS_KEY, UPBIT_OPEN_API_SECRET_KEY } from './constants'
 import { logWriter } from './writer'
 import { printNow } from '.'
+
+const rateLimit = RateLimit(8)
 
 function createToken(query?: string) {
   return query
@@ -31,14 +34,28 @@ function createToken(query?: string) {
 }
 
 export async function getAssets() {
-  return (await (
-    await fetch(`${UPBIT_API_URL}/v1/accounts`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${createToken()}`,
-      },
-    })
-  ).json()) as Asset[] & UpbitError
+  await rateLimit()
+
+  const response = await fetch(`${UPBIT_API_URL}/v1/accounts`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${createToken()}`,
+    },
+  })
+
+  if (!response.ok) {
+    logWriter.write(`${printNow()}, ${await response.text()}\n`)
+    return null
+  }
+
+  const result = (await response.json()) as Asset[] & UpbitError
+
+  if (result.error) {
+    logWriter.write(`${printNow()}, ${result.error}\n`)
+    return null
+  }
+
+  return result as Asset[]
 }
 
 type MinuteCandleInput = {
@@ -50,14 +67,28 @@ type MinuteCandleInput = {
 export async function getMinuteCandles(unit: number, body: MinuteCandleInput) {
   let query = encode(body)
 
-  return (await (
-    await fetch(`${UPBIT_API_URL}/v1/candles/minutes/${unit}?${query}`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${createToken(query)}`,
-      },
-    })
-  ).json()) as UpbitCandle[] & UpbitError
+  await rateLimit()
+
+  const response = await fetch(`${UPBIT_API_URL}/v1/candles/minutes/${unit}?${query}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${createToken(query)}`,
+    },
+  })
+
+  if (!response.ok) {
+    logWriter.write(`${printNow()}, ${await response.text()}\n`)
+    return null
+  }
+
+  const result = (await response.json()) as UpbitCandle[] & UpbitError
+
+  if (result.error) {
+    logWriter.write(`${printNow()}, ${result.error}\n`)
+    return null
+  }
+
+  return result as UpbitCandle[]
 }
 
 type GetOrdersBody = {
@@ -78,15 +109,29 @@ export async function getOrders(body: GetOrdersBody) {
     query += states.map((state) => `&states[]=${state}`).join('')
   }
 
-  return (await (
-    await fetch(`${UPBIT_API_URL}/v1/orders?${query}`, {
-      method: 'GET',
-      headers: {
-        accept: 'application/json',
-        Authorization: `Bearer ${createToken(query)}`,
-      },
-    })
-  ).json()) as UpbitOrderDetail[] & UpbitError
+  await rateLimit()
+
+  const response = await fetch(`${UPBIT_API_URL}/v1/orders?${query}`, {
+    method: 'GET',
+    headers: {
+      accept: 'application/json',
+      Authorization: `Bearer ${createToken(query)}`,
+    },
+  })
+
+  if (!response.ok) {
+    logWriter.write(`${printNow()}, ${await response.text()}\n`)
+    return null
+  }
+
+  const result = (await response.json()) as UpbitOrderDetail[] & UpbitError
+
+  if (result.error) {
+    logWriter.write(`${printNow()}, ${result.error}\n`)
+    return null
+  }
+
+  return result
 }
 
 export async function cancelOrder(uuid: string) {
@@ -94,14 +139,28 @@ export async function cancelOrder(uuid: string) {
 
   logWriter.write(`${printNow()}, Cancel order\n`)
 
-  return (await (
-    await fetch(`${UPBIT_API_URL}/v1/order?${query}`, {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${createToken(query)}`,
-      },
-    })
-  ).json()) as UpbitOrder[] & UpbitError
+  await rateLimit()
+
+  const response = await fetch(`${UPBIT_API_URL}/v1/order?${query}`, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${createToken(query)}`,
+    },
+  })
+
+  if (!response.ok) {
+    logWriter.write(`${printNow()}, ${await response.text()}\n`)
+    return null
+  }
+
+  const result = (await response.json()) as UpbitOrder[] & UpbitError
+
+  if (result.error) {
+    logWriter.write(`${printNow()}, ${result.error}\n`)
+    return null
+  }
+
+  return result as UpbitOrder[]
 }
 
 type OrderCoinBody = {
@@ -113,67 +172,28 @@ type OrderCoinBody = {
 }
 
 export async function orderCoin(body: OrderCoinBody) {
-  return (await (
-    await fetch(`${UPBIT_API_URL}/v1/orders`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${createToken(encode(body))}`,
-      },
-      body: JSON.stringify(body),
-    })
-  ).json()) as UpbitOrder & UpbitError
-}
+  await rateLimit()
 
-export function ceilUpbitPrice(price: number) {
-  let formattedPrice
+  const response = await fetch(`${UPBIT_API_URL}/v1/orders`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${createToken(encode(body))}`,
+    },
+    body: JSON.stringify(body),
+  })
 
-  if (price >= 2_000_000) {
-    formattedPrice = Math.ceil(price / 1000) * 1000
-  } else if (price >= 1_000_000) {
-    formattedPrice = Math.ceil(price / 500) * 500
-  } else if (price >= 500_000) {
-    formattedPrice = Math.ceil(price / 100) * 100
-  } else if (price >= 100_000) {
-    formattedPrice = Math.ceil(price / 50) * 50
-  } else if (price >= 10_000) {
-    formattedPrice = Math.ceil(price / 10) * 10
-  } else if (price >= 1_000) {
-    formattedPrice = Math.ceil(price / 5) * 5
-  } else if (price >= 100) {
-    formattedPrice = Math.ceil(price / 1) * 1
-  } else if (price >= 10) {
-    formattedPrice = Math.ceil(price / 0.1) * 0.1
-  } else if (price >= 1) {
-    formattedPrice = Math.ceil(price / 0.01) * 0.01
-  } else {
-    throw new Error('1원 미만의 코인은 거래할 수 없습니다.')
+  if (!response.ok) {
+    logWriter.write(`${printNow()}, ${await response.text()}\n`)
+    return null
   }
 
-  return formattedPrice
-}
+  const result = (await response.json()) as UpbitOrder & UpbitError
 
-export function getCoinUnit(COIN_CODE: string) {
-  switch (COIN_CODE) {
-    case 'KRW-BTC':
-      return 8
-    default:
-      return 0
-  }
-}
-
-export function getMoneyRatio(assets: Asset[], currentPrice: number) {
-  let moneyAmount = 0
-  let totalAmount = 0
-
-  for (const asset of assets) {
-    if (asset.currency === 'KRW') {
-      moneyAmount += +asset.balance
-      totalAmount += +asset.balance
-    } else {
-      totalAmount += +asset.balance * currentPrice
-    }
+  if (result.error) {
+    logWriter.write(`${printNow()}, ${result.error}\n`)
+    return null
   }
 
-  return (moneyAmount * 100) / totalAmount
+  return result as UpbitOrder
 }

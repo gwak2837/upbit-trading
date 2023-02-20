@@ -1,58 +1,65 @@
-import { UpbitCandle, UpbitError, UpbitOrderDetail } from './types/upbit'
+import { UpbitCandle } from './types/upbit'
 import { printNow, sleep } from './utils'
-import { REBALANCING_CHECK_INTERVAL } from './utils/config'
+import { MARKET_CODES, REBALANCING_INTERVALS, REBALANCING_RATIOS } from './utils/constants'
 import { cancelOrder, getAssets, getMinuteCandles, getOrders, orderCoin } from './utils/upbit'
-import { logWriter, tickWriter } from './utils/writer'
+import { logWriter } from './utils/writer'
 
-const marketCodes = ['KRW-BTC', 'KRW-XRP', 'KRW-DOGE', 'KRW-TRX']
-const targetRatios = [20, 20, 20, 20, 20]
+const marketCodes = MARKET_CODES.split(',')
+const targetRatios = REBALANCING_RATIOS.split(',').map((ratio) => +ratio)
+const rebalancingIntervals = REBALANCING_INTERVALS.split(',').map((interval) =>
+  process.env.NODE_ENV === 'production' ? +interval : 5000
+)
 
-const totalTargetRatio = targetRatios.reduce((acc, cur) => acc + cur, 0)
+if (marketCodes.length !== rebalancingIntervals.length)
+  throw Error('MARKET_CODES, REBALANCING_INTERVALS 배열 길이가 다릅니다')
+
 const coinCodes = marketCodes.map((market) => market.split('-')[1])
-const assetCodes = [...coinCodes, 'KRW']
+const coinCount = marketCodes.length
+const totalTargetRatio = targetRatios.reduce((acc, cur) => acc + cur, 0)
 
-async function rebalanceAssets() {
-  const candles = marketCodes.map((market) => getMinuteCandles(1, { market }))
-  const orders = marketCodes.map((market) => getOrders({ market }))
+async function rebalanceAsset(market: string) {
+  // 정보 불러오기
+  const result = await Promise.all([
+    getOrders({ market }),
+    getAssets(),
+    ...marketCodes.map((market) => getMinuteCandles(1, { market })),
+  ])
 
-  // 가격 정보, 자산 정보 불러오기
-  const result = await Promise.all([getAssets(), ...candles, ...orders])
+  const waitingOrders = result[0]
+  if (!waitingOrders) return
 
-  const currAssets = result[0]
-  const currCandles = result.slice(1, candles.length + 1) as (UpbitCandle[] & UpbitError)[]
-  const waitingOrders = result.slice(currCandles.length + 1) as (UpbitOrderDetail[] & UpbitError)[]
+  const currAssets = result[1]
+  if (!currAssets) return
 
   // 미체결 주문 모두 취소
   await Promise.all(waitingOrders.flat().map((order) => cancelOrder(order.uuid)))
 
-  // 코인 평가금액 계산
+  // 자산 평가금액 계산
+  const currCandles = result.slice(2) as (UpbitCandle[] | null)[]
+
   const currPrices: number[] = []
   const currVolumes: number[] = []
   const currEvals: number[] = []
 
-  for (let i = 0; i < currCandles.length; i++) {
+  for (let i = 0; i < coinCount; i++) {
     const candle = currCandles[i]
-    if (candle.error) {
-      console.error('👀 - candle.error', candle.error)
-      break
-    }
+    if (!candle) return
 
     const coinPrice = candle[0].trade_price
     currPrices.push(coinPrice)
 
     const coin = currAssets.find((asset) => asset.currency === coinCodes[i])
-    if (!coin) {
+
+    if (coin) {
+      const coinBalance = +coin.balance
+      currVolumes.push(coinBalance)
+      currEvals.push(coinBalance * coinPrice)
+    } else {
       currVolumes.push(0)
       currEvals.push(0)
-      continue
     }
-
-    const coinBalance = +coin.balance
-    currVolumes.push(coinBalance)
-    currEvals.push(coinBalance * coinPrice)
   }
 
-  // 원화 잔액 계산
   const cash = currAssets.find((asset) => asset.currency === 'KRW')
   currPrices.push(1)
   currVolumes.push(+cash!.balance)
@@ -61,97 +68,55 @@ async function rebalanceAssets() {
   const totalCurrEval = currEvals.reduce((acc, cur) => acc + cur, 0)
 
   // 리밸런싱 금액 계산
-  const currRatios: number[] = []
-  const targetEvals: number[] = []
-  const rebalDiffEvals: number[] = []
-  const rebalDiffRatios: number[] = []
-  const orderVolumes: string[] = []
-  const orderSides: ('ask' | 'bid')[] = []
+  const i = marketCodes.findIndex((marketCode) => marketCode === market)
+  if (i === -1) return
 
-  for (let i = 0; i < targetRatios.length; i++) {
-    const currPrice = currPrices[i]
-    const currEval = currEvals[i]
-    const targetRatio = targetRatios[i]
+  const currPrice = currPrices[i]
+  const currEval = currEvals[i]
+  const currRatio = (100 * currEval) / totalCurrEval
 
-    const currRatio = (100 * currEval) / totalCurrEval
-    currRatios.push(currRatio)
+  const targetRatio = targetRatios[i]
+  const targetEval = (totalCurrEval * targetRatio) / totalTargetRatio
 
-    const targetEval = (totalCurrEval * targetRatio) / totalTargetRatio
-    targetEvals.push(targetEval)
+  const rebalDiffEval = targetEval - currEval
+  const rebalDiffRatio = targetRatio - currRatio
 
-    const rebalDiffEval = targetEval - currEval
-    rebalDiffEvals.push(rebalDiffEval)
+  if (Math.abs(rebalDiffEval) < 5050 || Math.abs(rebalDiffRatio) < 0.1) return
 
-    const rebalDiffRatio = targetRatio - currRatio
-    rebalDiffRatios.push(rebalDiffRatio)
+  // 리밸런싱 주문
+  const orderVolume = rebalDiffEval / currPrice
 
-    if (i === targetRatios.length - 1) continue
-
-    const orderVolume = rebalDiffEval / currPrice
-    orderVolumes.push(Math.abs(orderVolume).toFixed(8))
-    orderSides.push(orderVolume > 0 ? 'bid' : 'ask')
-  }
-
-  if (process.env.NODE_ENV === 'development') {
-    // 결과
-    const table = {
-      currPrice: new Table(currPrices),
-      currVolume: new Table(currVolumes),
-      currEval: new Table(currEvals.map((currEval) => Math.floor(currEval))),
-      currRatio: new Table(currRatios.map((currRatio) => +currRatio.toFixed(2))),
-      '': [],
-      targetEval: new Table(targetEvals.map((targetEval) => Math.floor(targetEval))),
-      targetRatio: new Table(targetRatios),
-      ' ': [],
-      rebalDiffEval: new Table(rebalDiffEvals.map((rebalDiffEval) => Math.floor(rebalDiffEval))),
-      rebalDiffRatio: new Table(
-        rebalDiffRatios.map((rebalDiffRatio) => +rebalDiffRatio.toFixed(2))
-      ),
-      '  ': [],
-      orderSide: new Table(orderSides),
-      orderVolume: new Table(orderVolumes),
-    }
-    console.table(table, assetCodes)
-  } else if (process.env.NODE_ENV === 'production') {
-    // 리밸런싱
-    const rebalancingOrders = []
-
-    for (let i = 0; i < orderSides.length; i++) {
-      if (Math.abs(rebalDiffEvals[i]) < 5050 || Math.abs(rebalDiffRatios[i]) < 0.1) continue
-
-      const order = orderCoin({
-        market: marketCodes[i],
-        ord_type: 'limit',
-        side: orderSides[i],
-        price: String(currPrices[i]),
-        volume: orderVolumes[i],
-      })
-      rebalancingOrders.push(order)
-    }
-
-    await Promise.all(rebalancingOrders)
+  if (process.env.NODE_ENV === 'production') {
+    await orderCoin({
+      market,
+      ord_type: 'limit',
+      side: orderVolume > 0 ? 'bid' : 'ask',
+      price: String(currPrice),
+      volume: Math.abs(orderVolume).toFixed(8),
+    })
+  } else {
+    console.log(
+      '👀 - order',
+      market,
+      orderVolume > 0 ? 'bid' : 'ask',
+      String(currPrice),
+      Math.abs(orderVolume).toFixed(8),
+      rebalDiffEval
+    )
   }
 }
 
-class Table {
-  constructor(arr: (number | string)[]) {
-    for (let i = 0; i < assetCodes.length; i++) {
-      const element = arr[i]
-      ;(this as any)[assetCodes[i]] = element
-    }
-  }
-}
-
-async function main() {
+async function rebalancePeriodically(market: string, period: number) {
   while (true) {
     try {
-      await rebalanceAssets()
-      tickWriter.write(`${printNow()}\n`)
+      await rebalanceAsset(market)
     } catch (error) {
       logWriter.write(`${printNow()}, ${JSON.stringify(error)}\n`)
     }
-    await sleep(process.env.NODE_ENV === 'production' ? +REBALANCING_CHECK_INTERVAL : 6_000)
+    await sleep(period)
   }
 }
 
-main()
+for (let i = 0; i < marketCodes.length; i++) {
+  rebalancePeriodically(marketCodes[i], rebalancingIntervals[i])
+}
