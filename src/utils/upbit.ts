@@ -137,7 +137,7 @@ export async function getOrders(body: GetOrdersBody) {
 export async function cancelOrder(uuid: string) {
   const query = encode({ uuid })
 
-  logWriter.write(`${printNow()}, Cancel order\n`)
+  logWriter.write(`${printNow()}, Cancel order ${uuid}\n`)
 
   await rateLimit()
 
