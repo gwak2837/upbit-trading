@@ -62,7 +62,7 @@ async function rebalanceAsset(market: string) {
     const coinPrice = candle[0].trade_price
     currPrices.push(coinPrice)
 
-    const coin = currAssets.find((asset) => asset.currency === coinCode)
+    const coin = currAssets.find((asset) => asset.currency === coinCodes[i])
 
     if (coin) {
       const coinBalance = +coin.balance
@@ -75,9 +75,11 @@ async function rebalanceAsset(market: string) {
   }
 
   const cash = currAssets.find((asset) => asset.currency === 'KRW')
+  if (!cash) return
+
   currPrices.push(1)
-  currVolumes.push(+cash!.balance)
-  currEvals.push(+cash!.balance)
+  currVolumes.push(+cash.balance)
+  currEvals.push(+cash.balance)
 
   const totalCurrEval = currEvals.reduce((acc, cur) => acc + cur, 0)
 
