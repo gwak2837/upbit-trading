@@ -7,11 +7,16 @@ import fetch from 'node-fetch'
 import { v4 as uuidv4 } from 'uuid'
 
 import { Asset, UpbitCandle, UpbitError, UpbitOrder, UpbitOrderDetail } from '../types/upbit'
-import { UPBIT_API_URL, UPBIT_OPEN_API_ACCESS_KEY, UPBIT_OPEN_API_SECRET_KEY } from './constants'
+import {
+  MAXIMUM_CONCURRENT_REQUEST,
+  UPBIT_API_URL,
+  UPBIT_OPEN_API_ACCESS_KEY,
+  UPBIT_OPEN_API_SECRET_KEY,
+} from './constants'
 import { logWriter } from './writer'
 import { printNow } from '.'
 
-const rateLimit = RateLimit(8)
+const rateLimit = RateLimit(MAXIMUM_CONCURRENT_REQUEST)
 
 function createToken(query?: string) {
   return query

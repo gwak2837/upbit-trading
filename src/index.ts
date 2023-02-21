@@ -1,6 +1,13 @@
 import { UpbitCandle } from './types/upbit'
 import { printNow, sleep } from './utils'
-import { MARKET_CODES, REBALANCING_INTERVALS, REBALANCING_RATIOS } from './utils/constants'
+import {
+  MARKET_CODES,
+  MAXIMUM_CONCURRENT_REQUEST,
+  MINIMUM_REBALANCING_AMOUNT,
+  MINIMUM_REBALANCING_RATIO,
+  REBALANCING_INTERVALS,
+  REBALANCING_RATIOS,
+} from './utils/constants'
 import { cancelOrder, getAssets, getMinuteCandles, getOrders, orderCoin } from './utils/upbit'
 import { logWriter } from './utils/writer'
 
@@ -9,7 +16,7 @@ const targetRatios = REBALANCING_RATIOS.split(',').map((ratio) => +ratio)
 const rebalancingIntervals = REBALANCING_INTERVALS.split(',').map((interval) =>
   process.env.NODE_ENV === 'production'
     ? +interval
-    : Math.ceil((marketCodes.length * marketCodes.length) / 8)
+    : Math.ceil((marketCodes.length * marketCodes.length) / MAXIMUM_CONCURRENT_REQUEST) * 1000
 )
 
 if (marketCodes.length !== rebalancingIntervals.length)
@@ -48,7 +55,7 @@ async function rebalanceAsset(market: string) {
     logWriter.write(`${printNow()}, ${coinCode} 주문 취소, 주기: ${newInterval}\n`)
   } else {
     if (rebalancingIntervals[i] > 60_000) {
-      rebalancingIntervals[i] -= 1000
+      rebalancingIntervals[i] = Math.floor(rebalancingIntervals[i] * 0.99)
     }
   }
 
@@ -107,7 +114,11 @@ async function rebalanceAsset(market: string) {
     })
   }
 
-  if (Math.abs(rebalDiffEval) < 5050 || Math.abs(rebalDiffRatio) < 0.1) return
+  if (
+    Math.abs(rebalDiffEval) < +MINIMUM_REBALANCING_AMOUNT ||
+    Math.abs(rebalDiffRatio) < +MINIMUM_REBALANCING_RATIO
+  )
+    return
 
   // 리밸런싱 주문
   const orderVolume = rebalDiffEval / currPrice
