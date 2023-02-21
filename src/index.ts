@@ -47,7 +47,9 @@ async function rebalanceAsset(market: string) {
 
     logWriter.write(`${printNow()}, ${coinCode} 주문 취소, 주기: ${newInterval}\n`)
   } else {
-    rebalancingIntervals[i] -= 1000
+    if (rebalancingIntervals[i] > 60_000) {
+      rebalancingIntervals[i] -= 1000
+    }
   }
 
   // 자산 평가금액 계산
