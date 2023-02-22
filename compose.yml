@@ -1,11 +1,11 @@
 version: '3.9'
 
 services:
-  upbit-trading-app:
+  upbit-trading:
     build: .
-    container_name: upbit-trading-app
+    container_name: upbit-trading
     env_file: .env
-    image: upbit-trading-app:latest
+    image: upbit-trading:latest
     restart: on-failure
     ports:
       - $PORT:$PORT

@@ -1,18 +1,33 @@
 /* eslint-disable promise/no-nesting */
 /* eslint-disable promise/always-return */
 /* eslint-disable no-console */
+import fs from 'fs'
 
 import { UpbitCandle, UpbitError } from '../src/types/upbit'
+import { printNow } from '../src/utils'
 import { getAssets, getMinuteCandles, getOrders } from '../src/utils/upbit'
 
 // getAssets().then((asset) => console.log('👀 - asset', asset))
 
 const marketCodes = ['KRW-BTC', 'KRW-XRP', 'KRW-DOGE', 'KRW-TRX']
 
-Promise.all(
-  marketCodes.map((marketCode) => getOrders({ market: marketCode, state: 'cancel' }))
-).then((orders) => {
-  //
+// Promise.all(
+//   marketCodes.map((marketCode) => getOrders({ market: marketCode, state: 'cancel' }))
+// ).then((orders) => {
+//   //
+// })
+
+export const assetsWriter = fs.createWriteStream(`docs/assets-${Date.now()}.txt`)
+assetsWriter.write(`Date,Coin,Balance,Price\n`)
+
+getAssets().then((assets) => {
+  if (!assets) return
+
+  const now = printNow()
+
+  for (const asset of assets) {
+    assetsWriter.write(`${now},${asset.currency},${asset.balance}\n`)
+  }
 })
 
 // getMonthCandle().then((result) => console.log('👀 - getMonthCandle', result))

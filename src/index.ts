@@ -40,25 +40,6 @@ async function rebalanceAsset(market: string) {
   const currAssets = result[1]
   if (!currAssets) return
 
-  // 미체결 주문 모두 취소
-  const i = marketCodes.findIndex((marketCode) => marketCode === market)
-  if (i === -1) return
-
-  const coinCode = coinCodes[i]
-
-  if (waitingOrders.length !== 0) {
-    await Promise.all(waitingOrders.map((order) => cancelOrder(order.uuid)))
-
-    const newInterval = Math.floor(rebalancingIntervals[i] * 1.2)
-    rebalancingIntervals[i] = newInterval
-
-    logWriter.write(`${printNow()}, ${coinCode} 주문 취소, 주기: ${newInterval}\n`)
-  } else {
-    if (rebalancingIntervals[i] > 60_000) {
-      rebalancingIntervals[i] = Math.floor(rebalancingIntervals[i] * 0.99)
-    }
-  }
-
   // 자산 평가금액 계산
   const currCandles = result.slice(2) as (UpbitCandle[] | null)[]
   const currPrices: number[] = []
@@ -90,6 +71,11 @@ async function rebalanceAsset(market: string) {
   const totalCurrEval = currEvals.reduce((acc, cur) => acc + cur, 0)
 
   // 리밸런싱 금액 계산
+  const i = marketCodes.findIndex((marketCode) => marketCode === market)
+  if (i === -1) return
+
+  const coinCode = coinCodes[i]
+
   const currPrice = currPrices[i]
   const currEval = currEvals[i]
   const currRatio = (100 * currEval) / totalCurrEval
@@ -120,6 +106,20 @@ async function rebalanceAsset(market: string) {
   )
     return
 
+  // 미체결 주문 모두 취소
+  if (waitingOrders.length !== 0) {
+    await Promise.all(waitingOrders.map((order) => cancelOrder(order.uuid)))
+
+    const newInterval = Math.floor(rebalancingIntervals[i] * 1.2)
+    rebalancingIntervals[i] = newInterval
+
+    logWriter.write(`${printNow()}, ${coinCode} 주문 취소, 주기: ${newInterval}\n`)
+  } else {
+    if (rebalancingIntervals[i] > 60_000) {
+      rebalancingIntervals[i] = Math.floor(rebalancingIntervals[i] * 0.99)
+    }
+  }
+
   // 리밸런싱 주문
   const orderVolume = rebalDiffEval / currPrice
 
@@ -130,6 +130,10 @@ async function rebalanceAsset(market: string) {
     price: String(currPrice),
     volume: Math.abs(orderVolume).toFixed(8),
   })
+
+  // 자산 기록
+  // assetsWriter.write(`Date,${currAssets.map((asset) => asset.currency).join(',')}\n`)
+  // assetsWriter.write(`${printNow()},${currAssets.map((asset) => asset.balance).join(',')}\n`)
 }
 
 async function rebalancePeriodically(market: string, period: number) {
