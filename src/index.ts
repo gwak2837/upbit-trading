@@ -4,6 +4,7 @@ import {
   MARKET_CODES,
   MINIMUM_REBALANCING_AMOUNT,
   MINIMUM_REBALANCING_RATIO,
+  REBALANCING_INTERVAL,
   REBALANCING_RATIOS,
 } from './utils/constants'
 import { cancelOrder, getAssets, getMinuteCandles, getOrders, orderCoin } from './utils/upbit'
@@ -150,7 +151,7 @@ async function rebalancePeriodically(market: string) {
     } catch (error) {
       logWriter.write(`${printNow()}, ${JSON.stringify(error)}\n`)
     }
-    await sleep(60_000 + Math.floor(Math.random() * 10_000))
+    await sleep(+REBALANCING_INTERVAL + Math.floor(Math.random() * 10_000))
   }
 }
 

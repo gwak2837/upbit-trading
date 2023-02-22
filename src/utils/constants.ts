@@ -6,7 +6,7 @@ export const UPBIT_OPEN_API_SECRET_KEY = process.env.UPBIT_OPEN_API_SECRET_KEY a
 
 export const MARKET_CODES = process.env.MARKET_CODES as string
 export const REBALANCING_RATIOS = process.env.REBALANCING_RATIOS as string
-export const REBALANCING_INTERVALS = process.env.REBALANCING_INTERVALS as string
+export const REBALANCING_INTERVAL = process.env.REBALANCING_INTERVAL as string
 export const MINIMUM_REBALANCING_AMOUNT = process.env.MINIMUM_REBALANCING_AMOUNT as string
 export const MINIMUM_REBALANCING_RATIO = process.env.MINIMUM_REBALANCING_RATIO as string
 
@@ -15,6 +15,6 @@ if (!UPBIT_OPEN_API_SECRET_KEY) throw new Error('Requires UPBIT_OPEN_API_SECRET_
 
 if (!MARKET_CODES) throw new Error('Requires MARKET_CODES')
 if (!REBALANCING_RATIOS) throw new Error('Requires REBALANCING_RATIOS')
-if (!REBALANCING_INTERVALS) throw new Error('Requires REBALANCING_INTERVALS')
+if (!REBALANCING_INTERVAL) throw new Error('Requires REBALANCING_INTERVAL')
 if (!MINIMUM_REBALANCING_AMOUNT) throw new Error('Requires MINIMUM_REBALANCING_AMOUNT')
 if (!MINIMUM_REBALANCING_RATIO) throw new Error('Requires MINIMUM_REBALANCING_RATIO')
