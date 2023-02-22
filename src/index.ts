@@ -2,10 +2,8 @@ import { UpbitCandle } from './types/upbit'
 import { printNow, sleep } from './utils'
 import {
   MARKET_CODES,
-  MAXIMUM_CONCURRENT_REQUEST,
   MINIMUM_REBALANCING_AMOUNT,
   MINIMUM_REBALANCING_RATIO,
-  REBALANCING_INTERVALS,
   REBALANCING_RATIOS,
 } from './utils/constants'
 import { cancelOrder, getAssets, getMinuteCandles, getOrders, orderCoin } from './utils/upbit'
@@ -13,14 +11,6 @@ import { logWriter } from './utils/writer'
 
 const marketCodes = MARKET_CODES.split(',')
 const targetRatios = REBALANCING_RATIOS.split(',').map((ratio) => +ratio)
-const rebalancingIntervals = REBALANCING_INTERVALS.split(',').map((interval) =>
-  process.env.NODE_ENV === 'production'
-    ? +interval
-    : Math.ceil((marketCodes.length * marketCodes.length) / MAXIMUM_CONCURRENT_REQUEST) * 1000
-)
-
-if (marketCodes.length !== rebalancingIntervals.length)
-  throw Error('MARKET_CODES, REBALANCING_INTERVALS 배열 길이가 다릅니다')
 
 const coinCodes = marketCodes.map((market) => market.split('-')[1])
 const coinCount = marketCodes.length
@@ -43,6 +33,7 @@ async function rebalanceAsset(market: string) {
   // 자산 평가금액 계산
   const currCandles = result.slice(2) as (UpbitCandle[] | null)[]
   const currPrices: number[] = []
+  const currBalances: string[] = []
   const currEvals: number[] = []
 
   for (let i = 0; i < coinCount; i++) {
@@ -56,8 +47,10 @@ async function rebalanceAsset(market: string) {
 
     if (coin) {
       const a = coin.balance.split('.')
+      currBalances.push(coin.balance)
       currEvals.push(((+a[0] * 100_000_000 + +a[1].padEnd(8, '0')) * coinPrice) / 100_000_000)
     } else {
+      currBalances.push('0')
       currEvals.push(0)
     }
   }
@@ -77,6 +70,7 @@ async function rebalanceAsset(market: string) {
   const coinCode = coinCodes[i]
 
   const currPrice = currPrices[i]
+  const currBalance = currBalances[i]
   const currEval = currEvals[i]
   const currRatio = (100 * currEval) / totalCurrEval
 
@@ -90,6 +84,7 @@ async function rebalanceAsset(market: string) {
     console.table({
       [coinCode]: {
         currPrice,
+        currBalance: currBalance,
         currEval: Math.floor(currEval),
         currRatio: currRatio.toFixed(3),
         targetEval: Math.floor(targetEval),
@@ -106,27 +101,39 @@ async function rebalanceAsset(market: string) {
   )
     return
 
-  // 미체결 주문 모두 취소
-  if (waitingOrders.length !== 0) {
-    await Promise.all(waitingOrders.map((order) => cancelOrder(order.uuid)))
-
-    const newInterval = Math.floor(rebalancingIntervals[i] * 1.2)
-    rebalancingIntervals[i] = newInterval
-
-    logWriter.write(`${printNow()}, ${coinCode} 주문 취소, 주기: ${newInterval}\n`)
-  } else {
-    if (rebalancingIntervals[i] > 60_000) {
-      rebalancingIntervals[i] = Math.floor(rebalancingIntervals[i] * 0.99)
-    }
-  }
-
-  // 리밸런싱 주문
+  // 리밸런싱
   const orderVolume = rebalDiffEval / currPrice
+  const orderSide = orderVolume > 0 ? 'bid' : 'ask'
+
+  if (waitingOrders.length !== 0) {
+    const canceledOrders = []
+
+    for (const waitingOrder of waitingOrders) {
+      const price = +waitingOrder.price
+      const volume = +waitingOrder.volume
+
+      if (
+        waitingOrder.side === orderSide &&
+        price > currPrice * 0.95 &&
+        price < currPrice * 1.05 &&
+        volume > Math.abs(orderVolume) * 0.95 &&
+        volume < Math.abs(orderVolume) * 1.05
+      )
+        return
+
+      canceledOrders.push(cancelOrder(waitingOrder.uuid))
+
+      const log = `${printNow()}, ${coinCode} 주문 취소, 이전 주문: ${price} ${volume}, 현재 주문: ${currPrice} ${orderVolume}\n`
+      logWriter.write(log)
+    }
+
+    await Promise.all(canceledOrders)
+  }
 
   await orderCoin({
     market,
     ord_type: 'limit',
-    side: orderVolume > 0 ? 'bid' : 'ask',
+    side: orderSide,
     price: String(currPrice),
     volume: Math.abs(orderVolume).toFixed(8),
   })
@@ -136,17 +143,17 @@ async function rebalanceAsset(market: string) {
   // assetsWriter.write(`${printNow()},${currAssets.map((asset) => asset.balance).join(',')}\n`)
 }
 
-async function rebalancePeriodically(market: string, period: number) {
+async function rebalancePeriodically(market: string) {
   while (true) {
     try {
       await rebalanceAsset(market)
     } catch (error) {
       logWriter.write(`${printNow()}, ${JSON.stringify(error)}\n`)
     }
-    await sleep(period)
+    await sleep(60_000 + Math.floor(Math.random() * 10_000))
   }
 }
 
 for (let i = 0; i < marketCodes.length; i++) {
-  rebalancePeriodically(marketCodes[i], rebalancingIntervals[i])
+  rebalancePeriodically(marketCodes[i])
 }
