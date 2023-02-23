@@ -52,7 +52,7 @@ async function rebalanceAssets() {
   const allAssetsWaitingOrders = result.slice(coinCount + 1) as UpbitOrderDetail[][]
   if (allAssetsWaitingOrders.some((order) => order === null)) return
 
-  // 평가금액 계산
+  // 자산별 평가금액 계산
   const coinStatistics: CoinStatistics = {}
 
   for (let i = 0; i < coinCount; i++) {
@@ -99,6 +99,7 @@ async function rebalanceAssets() {
   KRW.balanceDiff = KRW.valueDiff / KRW.price
   KRW.ratioDiff = KRW.targetRatio - KRW.ratio
 
+  // 리밸런싱
   revalancing: for (let i = 0; i < coinCount; i++) {
     const coinCode = coinCodes[i]
     const coinStatistic = coinStatistics[coinCode]
@@ -120,16 +121,12 @@ async function rebalanceAssets() {
     )
       continue
 
-    const orderSide = balanceDiff > 0 ? 'bid' : 'ask'
+    const side = balanceDiff > 0 ? 'bid' : 'ask'
+    const rawVolume = Math.abs(balanceDiff)
+    const volume = rawVolume.toFixed(8)
 
     if (process.env.NODE_ENV !== 'production') {
-      console.log(
-        '👀 - order',
-        coinCode,
-        orderSide,
-        String(price),
-        Math.abs(balanceDiff).toFixed(8)
-      )
+      console.log('👀 - order', coinCode, side, price, volume)
       continue
     }
 
@@ -141,21 +138,25 @@ async function rebalanceAssets() {
       for (const waitingOrder of waitingOrders) {
         const prevSide = waitingOrder.side
         const prevPrice = +waitingOrder.price
-        const volume = +waitingOrder.volume
+        const prevVolume = +waitingOrder.volume
+
+        const coinCode_ = coinCode.padEnd(4, ' ')
 
         if (
-          waitingOrder.side === orderSide &&
+          waitingOrder.side === side &&
           prevPrice > price * 0.95 &&
           prevPrice < price * 1.05 &&
-          volume > Math.abs(balanceDiff) * 0.95 &&
-          volume < Math.abs(balanceDiff) * 1.05
-        )
+          prevVolume > rawVolume * 0.95 &&
+          prevVolume < rawVolume * 1.05
+        ) {
+          const log = `${printNow()}, ${coinCode_} 주문 유지, 이전 주문: ${prevSide} ${prevPrice} ${prevVolume}, 현재 주문: ${side} ${price} ${volume}\n`
+          logWriter.write(log)
           continue revalancing
+        }
 
         canceledOrders.push(cancelOrder(waitingOrder.uuid))
 
-        const coinCode_ = coinCode.padEnd(4, ' ')
-        const log = `${printNow()}, ${coinCode_} 주문 취소, 이전 주문: ${prevSide} ${prevPrice} ${volume}, 현재 주문: ${prevSide} ${prevPrice} ${balanceDiff}\n`
+        const log = `${printNow()}, ${coinCode_} 주문 취소, 이전 주문: ${prevSide} ${prevPrice} ${prevVolume}, 현재 주문: ${side} ${price} ${volume}\n`
         logWriter.write(log)
       }
 
@@ -165,12 +166,13 @@ async function rebalanceAssets() {
     await orderCoin({
       market: marketCodes[i],
       ord_type: 'limit',
-      side: orderSide,
+      side,
       price: String(price),
-      volume: Math.abs(balanceDiff).toFixed(8),
+      volume,
     })
   }
 
+  // 통계 기록
   if (process.env.NODE_ENV !== 'production') {
     for (const coinCode in coinStatistics) {
       const coinStatistic = coinStatistics[coinCode]
@@ -186,7 +188,6 @@ async function rebalanceAssets() {
     console.table(coinStatistics)
   }
 
-  // 자산 기록
   // assetsWriter.write(`Date,${currAssets.map((asset) => asset.currency).join(',')}\n`)
   // assetsWriter.write(`${printNow()},${currAssets.map((asset) => asset.balance).join(',')}\n`)
 }
