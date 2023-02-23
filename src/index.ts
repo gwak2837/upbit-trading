@@ -122,7 +122,7 @@ async function rebalanceAssets() {
 
     const orderSide = balanceDiff > 0 ? 'bid' : 'ask'
 
-    if (process.env.NODE_ENV === 'production') {
+    if (process.env.NODE_ENV !== 'production') {
       console.log(
         '👀 - order',
         coinCode,
