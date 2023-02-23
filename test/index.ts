@@ -23,11 +23,7 @@ assetsWriter.write(`Date,Coin,Balance,Price\n`)
 getAssets().then((assets) => {
   if (!assets) return
 
-  const now = printNow()
-
-  for (const asset of assets) {
-    assetsWriter.write(`${now},${asset.currency},${asset.balance}\n`)
-  }
+  console.log('👀 - assets:', assets)
 })
 
 // getMonthCandle().then((result) => console.log('👀 - getMonthCandle', result))
