@@ -139,6 +139,7 @@ async function rebalanceAssets() {
       const canceledOrders = []
 
       for (const waitingOrder of waitingOrders) {
+        const prevSide = waitingOrder.side
         const prevPrice = +waitingOrder.price
         const volume = +waitingOrder.volume
 
@@ -154,7 +155,7 @@ async function rebalanceAssets() {
         canceledOrders.push(cancelOrder(waitingOrder.uuid))
 
         const coinCode_ = coinCode.padEnd(4, ' ')
-        const log = `${printNow()}, ${coinCode_} 주문 취소, 이전 주문: ${prevPrice} ${volume}, 현재 주문: ${prevPrice} ${balanceDiff}\n`
+        const log = `${printNow()}, ${coinCode_} 주문 취소, 이전 주문: ${prevSide} ${prevPrice} ${volume}, 현재 주문: ${prevSide} ${prevPrice} ${balanceDiff}\n`
         logWriter.write(log)
       }
 
