@@ -147,3 +147,5 @@ dist
 !/docs/chart.html
 .env*
 src/utils/options.ts
+*.crt
+*.key

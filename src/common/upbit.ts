@@ -13,8 +13,8 @@ import {
   UPBIT_OPEN_API_ACCESS_KEY,
   UPBIT_OPEN_API_SECRET_KEY,
 } from './constants'
+import { printNow } from './utils'
 import { logWriter } from './writer'
-import { printNow } from '.'
 
 const rateLimit = RateLimit(MAXIMUM_CONCURRENT_REQUEST)
 

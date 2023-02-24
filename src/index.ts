@@ -1,14 +1,15 @@
-import { UpbitCandle, UpbitOrderDetail } from './types/upbit'
-import { addDecimal8, printNow, sleep } from './utils'
 import {
   MARKET_CODES,
   MINIMUM_REBALANCING_AMOUNT,
   MINIMUM_REBALANCING_RATIO,
   REBALANCING_INTERVAL,
   REBALANCING_RATIOS,
-} from './utils/constants'
-import { cancelOrder, getAssets, getMinuteCandles, getOrders, orderCoin } from './utils/upbit'
-import { logWriter } from './utils/writer'
+} from './common/constants'
+import { pool } from './common/postgres'
+import { cancelOrder, getAssets, getMinuteCandles, getOrders, orderCoin } from './common/upbit'
+import { addDecimal8, printNow, sleep } from './common/utils'
+import { logWriter } from './common/writer'
+import { UpbitCandle, UpbitOrderDetail } from './types/upbit'
 
 const marketCodes = MARKET_CODES.split(',')
 const targetRatios = REBALANCING_RATIOS.split(',').map((ratio) => +ratio)
@@ -57,17 +58,28 @@ async function rebalanceAssets() {
 
   for (let i = 0; i < coinCount; i++) {
     const coinCode = coinCodes[i]
+    const coinPrice = currCandles[i][0].trade_price
 
     const asset = currAssets.find((asset) => asset.currency === coinCode)
-    if (!asset) return
+    if (!asset) {
+      coinStatistics[coinCode] = {
+        price: coinPrice,
+        balance: 0,
+        value: 0,
+        ratio: 0,
+        targetValue: 0,
+        targetRatio: targetRatios[i],
+        balanceDiff: 0,
+      }
+      continue
+    }
 
     const _ = asset.balance.split('.')
-    const coinPrice = currCandles[i][0].trade_price
 
     coinStatistics[coinCode] = {
       price: coinPrice,
       balance: addDecimal8(asset.balance, asset.locked),
-      value: ((+_[0] * 100_000_000 + +_[1].padEnd(8, '0')) * coinPrice) / 100_000_000,
+      value: ((+_[0] * 100_000_000 + +(_[1]?.padEnd(8, '0') ?? 0)) * coinPrice) / 100_000_000,
       ratio: 0,
       targetValue: 0,
       targetRatio: targetRatios[i],
@@ -173,7 +185,9 @@ async function rebalanceAssets() {
   }
 
   // 통계 기록
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV === 'production') {
+    // pool.query('INSERT')
+  } else {
     for (const coinCode in coinStatistics) {
       const coinStatistic = coinStatistics[coinCode]
       coinStatistic.value = Math.floor(coinStatistic.value)
@@ -187,9 +201,6 @@ async function rebalanceAssets() {
     console.log('👀 - candle_date_time_kst', currCandles[0][0].candle_date_time_kst)
     console.table(coinStatistics)
   }
-
-  // assetsWriter.write(`Date,${currAssets.map((asset) => asset.currency).join(',')}\n`)
-  // assetsWriter.write(`${printNow()},${currAssets.map((asset) => asset.balance).join(',')}\n`)
 }
 
 async function rebalancePeriodically() {

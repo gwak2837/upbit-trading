@@ -3,9 +3,9 @@
 /* eslint-disable no-console */
 import fs from 'fs'
 
+import { getAssets, getMinuteCandles, getOrders } from '../src/common/upbit'
+import { printNow } from '../src/common/utils'
 import { UpbitCandle, UpbitError } from '../src/types/upbit'
-import { printNow } from '../src/utils'
-import { getAssets, getMinuteCandles, getOrders } from '../src/utils/upbit'
 
 // getAssets().then((asset) => console.log('👀 - asset', asset))
 
