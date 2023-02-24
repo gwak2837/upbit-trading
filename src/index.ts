@@ -5,7 +5,6 @@ import {
   REBALANCING_INTERVAL,
   REBALANCING_RATIOS,
 } from './common/constants'
-import { pool } from './common/postgres'
 import { cancelOrder, getAssets, getMinuteCandles, getOrders, orderCoin } from './common/upbit'
 import { addDecimal8, printNow, sleep } from './common/utils'
 import { logWriter } from './common/writer'
@@ -185,9 +184,7 @@ async function rebalanceAssets() {
   }
 
   // 통계 기록
-  if (process.env.NODE_ENV === 'production') {
-    // pool.query('INSERT')
-  } else {
+  if (process.env.NODE_ENV !== 'production') {
     for (const coinCode in coinStatistics) {
       const coinStatistic = coinStatistics[coinCode]
       coinStatistic.value = Math.floor(coinStatistic.value)
