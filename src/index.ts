@@ -110,8 +110,8 @@ async function rebalanceAssets() {
   KRW.balanceDiff = KRW.valueDiff / KRW.price
   KRW.ratioDiff = KRW.targetRatio - KRW.ratio
 
-  // 리밸런싱
   revalancing: for (let i = 0; i < coinCount; i++) {
+    // 리밸런싱 계산
     const coinCode = coinCodes[i]
     const coinStatistic = coinStatistics[coinCode]
 
@@ -141,39 +141,40 @@ async function rebalanceAssets() {
       continue
     }
 
-    const waitingOrders = allAssetsWaitingOrders[i]
+    // 이전 대기 주문 유지.삭제
+    const canceledOrders = []
 
-    if (waitingOrders.length !== 0) {
-      const canceledOrders = []
+    for (const currAssetWaitingOrder of allAssetsWaitingOrders[i]) {
+      const prevSide = currAssetWaitingOrder.side
+      const prevPrice = +currAssetWaitingOrder.price
+      const prevVolume = +currAssetWaitingOrder.volume
 
-      for (const waitingOrder of waitingOrders) {
-        const prevSide = waitingOrder.side
-        const prevPrice = +waitingOrder.price
-        const prevVolume = +waitingOrder.volume
-
-        const coinCode_ = coinCode.padEnd(4, ' ')
-
-        if (
-          waitingOrder.side === side &&
-          prevPrice > price * 0.95 &&
-          prevPrice < price * 1.05 &&
-          prevVolume > rawVolume * 0.95 &&
-          prevVolume < rawVolume * 1.05
-        ) {
-          const log = `${printNow()}, ${coinCode_} 주문 유지, 이전 주문: ${prevSide} ${prevPrice} ${prevVolume}, 현재 주문: ${side} ${price} ${volume}\n`
-          logWriter.write(log)
-          continue revalancing
-        }
-
-        canceledOrders.push(cancelOrder(waitingOrder.uuid))
-
-        const log = `${printNow()}, ${coinCode_} 주문 취소, 이전 주문: ${prevSide} ${prevPrice} ${prevVolume}, 현재 주문: ${side} ${price} ${volume}\n`
-        logWriter.write(log)
+      if (
+        currAssetWaitingOrder.side === side &&
+        prevPrice > price * 0.95 &&
+        prevPrice < price * 1.05 &&
+        prevVolume > rawVolume * 0.95 &&
+        prevVolume < rawVolume * 1.05
+      ) {
+        await Promise.all(canceledOrders)
+        continue revalancing
       }
 
-      await Promise.all(canceledOrders)
+      canceledOrders.push(cancelOrder(currAssetWaitingOrder.uuid))
+
+      const coinCode_ = coinCode.padEnd(4, ' ')
+      const log = `${printNow()}, ${coinCode_} 주문 취소, 이전 주문: ${prevSide} ${prevPrice} ${prevVolume}, 현재 주문: ${side} ${price} ${volume}\n`
+      logWriter.write(log)
     }
 
+    for (let j = 0; j < allAssetsWaitingOrders.length; j++) {
+      if (j === i) continue
+      canceledOrders.push(...allAssetsWaitingOrders[j].flatMap((order) => cancelOrder(order.uuid)))
+    }
+
+    await Promise.all(canceledOrders)
+
+    // 주문
     await orderCoin({
       market: marketCodes[i],
       ord_type: 'limit',
