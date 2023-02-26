@@ -141,7 +141,7 @@ async function rebalanceAssets() {
       continue
     }
 
-    // 이전 대기 주문 유지.삭제
+    // 현재 자산 대기 주문 유지.삭제
     const canceledOrders = []
 
     for (const currAssetWaitingOrder of allAssetsWaitingOrders[i]) {
@@ -167,9 +167,20 @@ async function rebalanceAssets() {
       logWriter.write(log)
     }
 
+    // 다른 자산 대기 주문 유지.삭제
     for (let j = 0; j < allAssetsWaitingOrders.length; j++) {
       if (j === i) continue
-      canceledOrders.push(...allAssetsWaitingOrders[j].flatMap((order) => cancelOrder(order.uuid)))
+
+      for (const otherAssetWaitingOrder of allAssetsWaitingOrders[j]) {
+        canceledOrders.push(cancelOrder(otherAssetWaitingOrder.uuid))
+
+        const coinCode_ = otherAssetWaitingOrder.market.split('-')[1].padEnd(4, ' ')
+        const side = otherAssetWaitingOrder.side
+        const price = otherAssetWaitingOrder.price
+        const volume = otherAssetWaitingOrder.volume
+        const log = `${printNow()}, ${coinCode_} 주문 취소, 이전 주문: ${side} ${price} ${volume}\n`
+        logWriter.write(log)
+      }
     }
 
     await Promise.all(canceledOrders)
