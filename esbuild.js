@@ -9,7 +9,7 @@ esbuild
   .build({
     bundle: true,
     entryPoints: ['src/index.ts'],
-    loader: { '.ts': 'ts' },
+    loader: { '.sql': 'text' },
     metafile: true,
     minify: NODE_ENV === 'production',
     outfile: 'out/index.cjs',

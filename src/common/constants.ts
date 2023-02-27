@@ -1,4 +1,5 @@
 export const MAXIMUM_CONCURRENT_REQUEST = 7
+export const NODE_ENV = process.env.NODE_ENV as string
 
 export const UPBIT_API_URL = 'https://api.upbit.com'
 export const UPBIT_OPEN_API_ACCESS_KEY = process.env.UPBIT_OPEN_API_ACCESS_KEY as string
@@ -18,3 +19,9 @@ if (!REBALANCING_RATIOS) throw new Error('Requires REBALANCING_RATIOS')
 if (!REBALANCING_INTERVAL) throw new Error('Requires REBALANCING_INTERVAL')
 if (!MINIMUM_REBALANCING_AMOUNT) throw new Error('Requires MINIMUM_REBALANCING_AMOUNT')
 if (!MINIMUM_REBALANCING_RATIO) throw new Error('Requires MINIMUM_REBALANCING_RATIO')
+
+// 개별
+export const PGURI = process.env.PGURI as string
+export const POSTGRES_CA = process.env.POSTGRES_CA as string
+export const POSTGRES_CERT = process.env.POSTGRES_CERT as string
+export const POSTGRES_KEY = process.env.POSTGRES_KEY as string

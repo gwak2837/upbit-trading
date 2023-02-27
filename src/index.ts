@@ -2,12 +2,16 @@ import {
   MARKET_CODES,
   MINIMUM_REBALANCING_AMOUNT,
   MINIMUM_REBALANCING_RATIO,
+  NODE_ENV,
+  PGURI,
   REBALANCING_INTERVAL,
   REBALANCING_RATIOS,
 } from './common/constants'
+import { pool } from './common/postgres'
 import { cancelOrder, getAssets, getMinuteCandles, getOrders, orderCoin } from './common/upbit'
 import { addDecimal8, printNow, sleep } from './common/utils'
 import { logWriter } from './common/writer'
+import createAssetHistories from './createAssetHistories.sql'
 import { UpbitCandle, UpbitOrderDetail } from './types/upbit'
 
 const marketCodes = MARKET_CODES.split(',')
@@ -136,7 +140,7 @@ async function rebalanceAssets() {
     const rawVolume = Math.abs(balanceDiff)
     const volume = rawVolume.toFixed(8)
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (NODE_ENV !== 'production') {
       console.log('👀 - order', coinCode, side, price, volume)
       continue
     }
@@ -196,7 +200,16 @@ async function rebalanceAssets() {
   }
 
   // 통계 기록
-  if (process.env.NODE_ENV !== 'production') {
+  if (NODE_ENV === 'production') {
+    const statistics = Object.values(coinStatistics)
+
+    const a = await pool.query(createAssetHistories, [
+      Object.keys(coinStatistics),
+      statistics.map((stat) => stat.balance),
+      statistics.map((stat) => stat.price),
+    ])
+    console.log('👀 - a:', a)
+  } else {
     for (const coinCode in coinStatistics) {
       const coinStatistic = coinStatistics[coinCode]
       coinStatistic.value = Math.floor(coinStatistic.value)
@@ -214,13 +227,25 @@ async function rebalanceAssets() {
 
 async function rebalancePeriodically() {
   while (true) {
+    await sleep(+REBALANCING_INTERVAL)
+
     try {
       await rebalanceAssets()
     } catch (error: any) {
       logWriter.write(`${printNow()}, ${JSON.stringify(error.message)}\n`)
     }
-    await sleep(+REBALANCING_INTERVAL)
   }
 }
 
 rebalancePeriodically()
+
+pool
+  .query('SELECT CURRENT_TIMESTAMP')
+  .then(({ rows }) =>
+    console.log(
+      `🚅 Connected to ${PGURI} at ${new Date(rows[0].current_timestamp).toLocaleString()}`
+    )
+  )
+  .catch((error) => {
+    throw new Error('Cannot connect to PostgreSQL server... \n' + error)
+  })
