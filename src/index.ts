@@ -197,19 +197,19 @@ async function rebalanceAssets() {
       price: String(price),
       volume,
     })
-  }
 
-  // 통계 기록
-  if (NODE_ENV === 'production') {
+    // 기록
     const statistics = Object.values(coinStatistics)
 
-    const a = await pool.query(createAssetHistories, [
+    pool.query(createAssetHistories, [
       Object.keys(coinStatistics),
       statistics.map((stat) => stat.balance),
       statistics.map((stat) => stat.price),
     ])
-    console.log('👀 - a:', a)
-  } else {
+  }
+
+  // 통계 기록
+  if (NODE_ENV !== 'production') {
     for (const coinCode in coinStatistics) {
       const coinStatistic = coinStatistics[coinCode]
       coinStatistic.value = Math.floor(coinStatistic.value)
