@@ -1,35 +1,49 @@
 /* eslint-disable promise/no-nesting */
 /* eslint-disable promise/always-return */
 /* eslint-disable no-console */
-import fs from 'fs'
 
-import { getAssets, getMinuteCandles, getOrders } from '../src/common/upbit'
-import { printNow } from '../src/common/utils'
-import { UpbitCandle, UpbitError } from '../src/types/upbit'
+import { PGURI } from '../src/common/constants'
+import { pool } from '../src/common/postgres'
+import { getAssets, getMinuteCandles } from '../src/common/upbit'
+import getPreviousBalances from './getPreviousBalances.sql'
 
-// getAssets().then((asset) => console.log('👀 - asset', asset))
+async function getCurrentAssets() {
+  const assets = await getAssets()
+  if (!assets) return []
 
-const marketCodes = ['KRW-BTC', 'KRW-XRP', 'KRW-DOGE', 'KRW-TRX']
+  const prices = assets
+    .filter((asset) => asset.currency !== 'KRW')
+    .map((asset) => getMinuteCandles(1, { market: `KRW-${asset.currency}` }))
 
-// Promise.all(
-//   marketCodes.map((marketCode) => getOrders({ market: marketCode, state: 'cancel' }))
-// ).then((orders) => {
-//   //
-// })
+  return [assets, ...prices] as const
+}
 
-export const assetsWriter = fs.createWriteStream(`docs/assets-${Date.now()}.txt`)
-assetsWriter.write(`Date,Coin,Balance,Price\n`)
+async function main() {
+  const result = await Promise.all([
+    pool.query(getPreviousBalances, ['2023-02-27 12:04:41.730808+00']),
+    ...(await getCurrentAssets()),
+  ])
 
-getAssets().then((assets) => {
-  if (!assets) return
+  if (!result[1]) return
 
-  console.log('👀 - assets:', assets)
-})
+  console.log('👀 - rows:', result[0].rows)
+  console.log('👀 - assets:', result[1])
+  console.log('👀 - prices:', result.slice(2))
+  // 존버 수익률
+  // 섀넌 수익률
+  // 존버 대비 섀넌 수익률
+  // 연 환산 수익률
+}
 
-// getMonthCandle().then((result) => console.log('👀 - getMonthCandle', result))
+main()
 
-// getDepositHistory().then((result) => console.log('👀 - getDepositHistory', result))
-
-// depositWon(5000).then((result) => console.log('👀 - depositWon', result))
-
-// -는 위로 +는 아래로
+pool
+  .query('SELECT CURRENT_TIMESTAMP')
+  .then(({ rows }) =>
+    console.log(
+      `🚅 Connected to ${PGURI} at ${new Date(rows[0].current_timestamp).toLocaleString()}`
+    )
+  )
+  .catch((error) => {
+    throw new Error('Cannot connect to PostgreSQL server... \n' + error)
+  })
