@@ -24,6 +24,8 @@ const coinCodes = marketCodes.map((market) => market.split('-')[1])
 const coinCount = marketCodes.length
 const totalTargetRatio = targetRatios.reduce((acc, ratio) => acc + ratio, 0)
 
+let willCreateHistory = true
+
 type CoinStatistics = Record<
   string,
   {
@@ -191,14 +193,24 @@ async function rebalanceAssets() {
       volume,
     })
 
-    // 기록
-    const statistics = Object.values(coinStatistics)
+    // 최소 1시간마다 기록
+    if (willCreateHistory) {
+      willCreateHistory = false
 
-    pool.query(createAssetHistories, [
-      Object.keys(coinStatistics),
-      statistics.map((stat) => stat.balance),
-      statistics.map((stat) => stat.price),
-    ])
+      const statistics = Object.values(coinStatistics)
+
+      pool
+        .query(createAssetHistories, [
+          Object.keys(coinStatistics),
+          statistics.map((stat) => stat.balance),
+          statistics.map((stat) => stat.price),
+        ])
+        .then(() =>
+          setTimeout(() => {
+            willCreateHistory = true
+          }, 3600_000)
+        )
+    }
   }
 
   // 통계 기록

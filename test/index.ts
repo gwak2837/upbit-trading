@@ -20,15 +20,13 @@ async function getCurrentAssets() {
 
 async function main() {
   const result = await Promise.all([
-    pool.query(getPreviousBalances, ['2023-02-27 12:04:41.730808+00']),
-    ...(await getCurrentAssets()),
+    pool.query(getPreviousBalances, [
+      '2023-02-27 12:04:41.730808+00',
+      '2023-02-27 12:04:41.730808+00',
+    ]),
   ])
 
-  if (!result[1]) return
-
   console.log('👀 - rows:', result[0].rows)
-  console.log('👀 - assets:', result[1])
-  console.log('👀 - prices:', result.slice(2))
   // 존버 수익률
   // 섀넌 수익률
   // 존버 대비 섀넌 수익률
