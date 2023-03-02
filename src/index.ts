@@ -138,8 +138,10 @@ async function rebalanceAssets() {
     const minimumRebalancingRatio = minimumRebalancingRatios[i]
 
     if (Math.abs(ratioDiff) < minimumRebalancingRatio) {
-      if (minimumRebalancingRatio > +MINIMUM_REBALANCING_RATIO * 1.03) {
-        minimumRebalancingRatios[i] *= 0.97
+      if (minimumRebalancingRatio > +MINIMUM_REBALANCING_RATIO) {
+        minimumRebalancingRatios[i] *= 0.98
+      } else {
+        minimumRebalancingRatios[i] = +MINIMUM_REBALANCING_RATIO
       }
       continue
     }
@@ -194,13 +196,12 @@ async function rebalanceAssets() {
       volume,
     })
 
+    logWriter.write(`${printNow()} minimumRebalancingRatios: ${minimumRebalancingRatios}`)
     minimumRebalancingRatios[i] *= 1.25
 
     // 최소 1시간마다 기록
     if (willCreateHistory) {
       willCreateHistory = false
-
-      logWriter.write(`${printNow()} minimumRebalancingRatios: ${minimumRebalancingRatios}`)
 
       const statistics = Object.values(coinStatistics)
 

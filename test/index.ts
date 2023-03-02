@@ -21,7 +21,7 @@ async function getCurrentAssets() {
 
 async function main() {
   const result = await Promise.all([
-    pool.query(getPreviousBalances, ['2023-02-28 12:29:40.268404+00']),
+    pool.query(getPreviousBalances, ['2023-03-02 09:17:24.999489+00']),
     pool.query(getLastHistory),
   ])
 
