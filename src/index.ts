@@ -138,8 +138,8 @@ async function rebalanceAssets() {
     const minimumRebalancingRatio = minimumRebalancingRatios[i]
 
     if (Math.abs(ratioDiff) < minimumRebalancingRatio) {
-      if (minimumRebalancingRatio > +MINIMUM_REBALANCING_RATIO * 1.05) {
-        minimumRebalancingRatios[i] *= 0.95
+      if (minimumRebalancingRatio > +MINIMUM_REBALANCING_RATIO * 1.03) {
+        minimumRebalancingRatios[i] *= 0.97
       }
       continue
     }
