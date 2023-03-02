@@ -3,5 +3,5 @@ SELECT creation_time,
   balance,
   price
 FROM history
-WHERE creation_time = $1
-ORDER BY asset;
+ORDER BY id DESC
+LIMIT 13;

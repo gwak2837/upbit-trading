@@ -49,14 +49,14 @@ export async function getAssets() {
   })
 
   if (!response.ok) {
-    logWriter.write(`${printNow()}, getAssets, , ${await response.text()}\n`)
+    logWriter.write(`${printNow()} getAssets, , ${await response.text()}\n`)
     return null
   }
 
   const result = (await response.json()) as Asset[] & UpbitError
 
   if (result.error) {
-    logWriter.write(`${printNow()}, getAssets, , ${result.error}\n`)
+    logWriter.write(`${printNow()} getAssets, , ${result.error}\n`)
     return null
   }
 
@@ -83,7 +83,7 @@ export async function getMinuteCandles(unit: number, body: MinuteCandleInput) {
 
   if (!response.ok) {
     logWriter.write(
-      `${printNow()}, getMinuteCandles, ${JSON.stringify(body)}, ${await response.text()}\n`
+      `${printNow()} getMinuteCandles, ${JSON.stringify(body)}, ${await response.text()}\n`
     )
     return null
   }
@@ -91,7 +91,7 @@ export async function getMinuteCandles(unit: number, body: MinuteCandleInput) {
   const result = (await response.json()) as UpbitCandle[] & UpbitError
 
   if (result.error) {
-    logWriter.write(`${printNow()}, getMinuteCandles, ${JSON.stringify(body)}, ${result.error}\n`)
+    logWriter.write(`${printNow()} getMinuteCandles, ${JSON.stringify(body)}, ${result.error}\n`)
     return null
   }
 
@@ -127,14 +127,14 @@ export async function getOrders(body: GetOrdersBody) {
   })
 
   if (!response.ok) {
-    logWriter.write(`${printNow()}, getOrders, ${JSON.stringify(body)}, ${await response.text()}\n`)
+    logWriter.write(`${printNow()} getOrders, ${JSON.stringify(body)}, ${await response.text()}\n`)
     return null
   }
 
   const result = (await response.json()) as UpbitOrderDetail[] & UpbitError
 
   if (result.error) {
-    logWriter.write(`${printNow()}, getOrders, ${JSON.stringify(body)}, ${result.error}\n`)
+    logWriter.write(`${printNow()} getOrders, ${JSON.stringify(body)}, ${result.error}\n`)
     return null
   }
 
@@ -154,14 +154,14 @@ export async function cancelOrder(uuid: string) {
   })
 
   if (!response.ok) {
-    logWriter.write(`${printNow()}, cancelOrder, ${uuid}, ${await response.text()}\n`)
+    logWriter.write(`${printNow()} cancelOrder, ${uuid}, ${await response.text()}\n`)
     return null
   }
 
   const result = (await response.json()) as UpbitOrder & UpbitError
 
   if (result.error) {
-    logWriter.write(`${printNow()}, cancelOrder, ${uuid}, ${result.error}\n`)
+    logWriter.write(`${printNow()} cancelOrder, ${uuid}, ${result.error}\n`)
     return null
   }
 
@@ -189,14 +189,14 @@ export async function orderCoin(body: OrderCoinBody) {
   })
 
   if (!response.ok) {
-    logWriter.write(`${printNow()}, orderCoin, ${JSON.stringify(body)}, ${await response.text()}\n`)
+    logWriter.write(`${printNow()} orderCoin, ${JSON.stringify(body)}, ${await response.text()}\n`)
     return null
   }
 
   const result = (await response.json()) as UpbitOrder & UpbitError
 
   if (result.error) {
-    logWriter.write(`${printNow()}, orderCoin, ${JSON.stringify(body)}, ${result.error}\n`)
+    logWriter.write(`${printNow()} orderCoin, ${JSON.stringify(body)}, ${result.error}\n`)
     return null
   }
 

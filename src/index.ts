@@ -16,6 +16,7 @@ import { UpbitCandle, UpbitOrderDetail } from './types/upbit'
 
 const marketCodes = MARKET_CODES.split(',')
 const targetRatios = REBALANCING_RATIOS.split(',').map((ratio) => +ratio)
+const minimumRebalancingRatios = Array(marketCodes.length).fill(+MINIMUM_REBALANCING_RATIO)
 
 if (marketCodes.length !== targetRatios.length)
   throw new Error('MARKET_CODES, REBALANCING_RATIOS 배열 길이가 다릅니다')
@@ -132,11 +133,16 @@ async function rebalanceAssets() {
     const balanceDiff = (coinStatistic.balanceDiff = valueDiff / price)
     const ratioDiff = (coinStatistic.ratioDiff = targetRatio - ratio)
 
-    if (
-      Math.abs(valueDiff) < +MINIMUM_REBALANCING_AMOUNT ||
-      Math.abs(ratioDiff) < +MINIMUM_REBALANCING_RATIO
-    )
+    if (Math.abs(valueDiff) < +MINIMUM_REBALANCING_AMOUNT) continue
+
+    const minimumRebalancingRatio = minimumRebalancingRatios[i]
+
+    if (Math.abs(ratioDiff) < minimumRebalancingRatio) {
+      if (minimumRebalancingRatio > +MINIMUM_REBALANCING_RATIO * 1.05) {
+        minimumRebalancingRatios[i] *= 0.95
+      }
       continue
+    }
 
     const side = balanceDiff > 0 ? 'bid' : 'ask'
     const rawVolume = Math.abs(balanceDiff)
@@ -151,7 +157,6 @@ async function rebalanceAssets() {
     const canceledOrders = []
 
     for (const currAssetWaitingOrder of allAssetsWaitingOrders[i]) {
-      const prevSide = currAssetWaitingOrder.side
       const prevPrice = +currAssetWaitingOrder.price
       const prevVolume = +currAssetWaitingOrder.volume
 
@@ -167,10 +172,6 @@ async function rebalanceAssets() {
       }
 
       canceledOrders.push(cancelOrder(currAssetWaitingOrder.uuid))
-
-      const coinCode_ = coinCode.padEnd(4, ' ')
-      const log = `${printNow()}, ${coinCode_} 주문 취소, 이전 주문: ${prevSide} ${prevPrice} ${prevVolume}, 현재 주문: ${side} ${price} ${volume}\n`
-      logWriter.write(log)
     }
 
     // 다른 자산 대기 주문 유지.삭제
@@ -193,9 +194,13 @@ async function rebalanceAssets() {
       volume,
     })
 
+    minimumRebalancingRatios[i] *= 1.25
+
     // 최소 1시간마다 기록
     if (willCreateHistory) {
       willCreateHistory = false
+
+      logWriter.write(`${printNow()} minimumRebalancingRatios: ${minimumRebalancingRatios}`)
 
       const statistics = Object.values(coinStatistics)
 
@@ -237,7 +242,7 @@ async function rebalancePeriodically() {
     try {
       await rebalanceAssets()
     } catch (error: any) {
-      logWriter.write(`${printNow()}, ${JSON.stringify(error.message)}\n`)
+      logWriter.write(`${printNow()} ${JSON.stringify(error.message)}\n`)
     }
   }
 }

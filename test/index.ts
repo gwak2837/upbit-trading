@@ -5,6 +5,7 @@
 import { PGURI } from '../src/common/constants'
 import { pool } from '../src/common/postgres'
 import { getAssets, getMinuteCandles } from '../src/common/upbit'
+import getLastHistory from './getLastHistory.sql'
 import getPreviousBalances from './getPreviousBalances.sql'
 
 async function getCurrentAssets() {
@@ -20,17 +21,50 @@ async function getCurrentAssets() {
 
 async function main() {
   const result = await Promise.all([
-    pool.query(getPreviousBalances, [
-      '2023-02-27 12:04:41.730808+00',
-      '2023-02-27 12:04:41.730808+00',
-    ]),
+    pool.query(getPreviousBalances, ['2023-02-28 12:29:40.268404+00']),
+    pool.query(getLastHistory),
   ])
 
-  console.log('👀 - rows:', result[0].rows)
-  // 존버 수익률
-  // 섀넌 수익률
-  // 존버 대비 섀넌 수익률
-  // 연 환산 수익률
+  const prevHistory = result[0].rows
+  const lastHistory = result[1].rows.sort((a, b) =>
+    a.asset < b.asset ? -1 : a.asset === b.asset ? 0 : 1
+  )
+
+  const oneYear = 31_536_000_000
+  const timeDiff =
+    new Date(lastHistory[0].creation_time).getTime() -
+    new Date(prevHistory[0].creation_time).getTime()
+
+  const prevBalanceCurrPrice = prevHistory.reduce(
+    (acc, row, i) => acc + +row.balance * +lastHistory[i].price,
+    0
+  )
+  const prevTotalAssetsValue = prevHistory.reduce((acc, row) => acc + +row.balance * +row.price, 0)
+  const currTotalAssetsValue = lastHistory.reduce((acc, row) => acc + +row.balance * +row.price, 0)
+
+  const relativeRate = (100 * currTotalAssetsValue) / prevBalanceCurrPrice - 100
+
+  console.log('👀 -', prevHistory[0].creation_time, 'to', lastHistory[0].creation_time)
+  console.log('👀 - 존버 수익:', Math.floor(prevBalanceCurrPrice - prevTotalAssetsValue), '원')
+  console.log('👀 - 섀넌 수익:', Math.floor(currTotalAssetsValue - prevTotalAssetsValue), '원')
+  console.log('👀 - 상대 수익:', Math.floor(currTotalAssetsValue - prevBalanceCurrPrice), '원')
+  console.log(
+    '👀 - 연간 수익:',
+    Math.floor(((currTotalAssetsValue - prevBalanceCurrPrice) * oneYear) / timeDiff),
+    '원'
+  )
+  console.log(
+    '👀 - 존버 수익률:',
+    ((100 * prevBalanceCurrPrice) / prevTotalAssetsValue - 100).toFixed(5),
+    '%'
+  )
+  console.log(
+    '👀 - 섀넌 수익률:',
+    ((100 * currTotalAssetsValue) / prevTotalAssetsValue - 100).toFixed(5),
+    '%'
+  )
+  console.log('👀 - 상대 수익률:', relativeRate.toFixed(5), '%')
+  console.log('👀 - 연간 수익률:', ((relativeRate * oneYear) / timeDiff).toFixed(5), '%')
 }
 
 main()
