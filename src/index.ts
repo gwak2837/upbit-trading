@@ -16,7 +16,7 @@ import { UpbitCandle, UpbitOrderDetail } from './types/upbit'
 
 const marketCodes = MARKET_CODES.split(',')
 const targetRatios = REBALANCING_RATIOS.split(',').map((ratio) => +ratio)
-const minimumRebalancingRatios = Array(marketCodes.length).fill(+MINIMUM_REBALANCING_RATIO)
+const minimumRebalancingGaps = Array(marketCodes.length).fill(+MINIMUM_REBALANCING_RATIO * 2)
 
 if (marketCodes.length !== targetRatios.length)
   throw new Error('MARKET_CODES, REBALANCING_RATIOS 배열 길이가 다릅니다')
@@ -135,13 +135,13 @@ async function rebalanceAssets() {
 
     if (Math.abs(valueDiff) < +MINIMUM_REBALANCING_AMOUNT) continue
 
-    const minimumRebalancingRatio = minimumRebalancingRatios[i]
+    const minimumRebalancingGap = minimumRebalancingGaps[i]
 
-    if (Math.abs(ratioDiff) < minimumRebalancingRatio) {
-      if (minimumRebalancingRatio > +MINIMUM_REBALANCING_RATIO) {
-        minimumRebalancingRatios[i] *= 0.98
+    if (Math.abs(ratioDiff) < minimumRebalancingGap) {
+      if (minimumRebalancingGap > +MINIMUM_REBALANCING_RATIO) {
+        minimumRebalancingGaps[i] *= 0.98
       } else {
-        minimumRebalancingRatios[i] = +MINIMUM_REBALANCING_RATIO
+        minimumRebalancingGaps[i] = +MINIMUM_REBALANCING_RATIO
       }
       continue
     }
@@ -197,8 +197,8 @@ async function rebalanceAssets() {
     })
 
     const coinCode_ = coinCode.padEnd(4, ' ')
-    logWriter.write(`${printNow()} ${coinCode} minimumRebalancingRatio: ${minimumRebalancingRatio}\n`)
-    minimumRebalancingRatios[i] *= 1.25
+    logWriter.write(`${printNow()} ${coinCode_} min_rebalance_gap: ${minimumRebalancingGap}\n`)
+    minimumRebalancingGaps[i] *= 1.25
 
     // 최소 1시간마다 기록
     if (willCreateHistory) {
