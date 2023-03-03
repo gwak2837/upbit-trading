@@ -196,7 +196,8 @@ async function rebalanceAssets() {
       volume,
     })
 
-    logWriter.write(`${printNow()} minimumRebalancingRatios: ${minimumRebalancingRatios}`)
+    const coinCode_ = coinCode.padEnd(4, ' ')
+    logWriter.write(`${printNow()} ${coinCode} minimumRebalancingRatio: ${minimumRebalancingRatio}\n`)
     minimumRebalancingRatios[i] *= 1.25
 
     // 최소 1시간마다 기록
