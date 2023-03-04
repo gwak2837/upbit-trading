@@ -4,20 +4,8 @@
 
 import { PGURI } from '../src/common/constants'
 import { pool } from '../src/common/postgres'
-import { getAssets, getMinuteCandles } from '../src/common/upbit'
 import getLastHistory from './getLastHistory.sql'
 import getPreviousBalances from './getPreviousBalances.sql'
-
-async function getCurrentAssets() {
-  const assets = await getAssets()
-  if (!assets) return []
-
-  const prices = assets
-    .filter((asset) => asset.currency !== 'KRW')
-    .map((asset) => getMinuteCandles(1, { market: `KRW-${asset.currency}` }))
-
-  return [assets, ...prices] as const
-}
 
 async function main() {
   const result = await Promise.all([

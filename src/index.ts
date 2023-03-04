@@ -198,7 +198,7 @@ async function rebalanceAssets() {
 
     const coinCode_ = coinCode.padEnd(4, ' ')
     logWriter.write(`${printNow()} ${coinCode_} min_rebalance_gap: ${minimumRebalancingGap}\n`)
-    minimumRebalancingGaps[i] *= 1.25
+    minimumRebalancingGaps[i] *= 1.3
 
     // 최소 1시간마다 기록
     if (willCreateHistory) {
