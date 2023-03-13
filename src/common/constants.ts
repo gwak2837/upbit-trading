@@ -10,6 +10,8 @@ export const REBALANCING_RATIOS = process.env.REBALANCING_RATIOS as string
 export const REBALANCING_INTERVAL = process.env.REBALANCING_INTERVAL as string
 export const MINIMUM_REBALANCING_AMOUNT = process.env.MINIMUM_REBALANCING_AMOUNT as string
 export const MINIMUM_REBALANCING_RATIO = process.env.MINIMUM_REBALANCING_RATIO as string
+export const REBALANCING_RATIO_INCREASING_RATE = process.env
+  .REBALANCING_RATIO_INCREASING_RATE as string
 
 if (!UPBIT_OPEN_API_ACCESS_KEY) throw new Error('Requires UPBIT_OPEN_API_ACCESS_KEY')
 if (!UPBIT_OPEN_API_SECRET_KEY) throw new Error('Requires UPBIT_OPEN_API_SECRET_KEY')
@@ -19,6 +21,8 @@ if (!REBALANCING_RATIOS) throw new Error('Requires REBALANCING_RATIOS')
 if (!REBALANCING_INTERVAL) throw new Error('Requires REBALANCING_INTERVAL')
 if (!MINIMUM_REBALANCING_AMOUNT) throw new Error('Requires MINIMUM_REBALANCING_AMOUNT')
 if (!MINIMUM_REBALANCING_RATIO) throw new Error('Requires MINIMUM_REBALANCING_RATIO')
+if (!REBALANCING_RATIO_INCREASING_RATE)
+  throw new Error('Requires REBALANCING_RATIO_INCREASING_RATE')
 
 // 개별
 export const PGURI = process.env.PGURI as string

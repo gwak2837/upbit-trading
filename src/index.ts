@@ -6,6 +6,7 @@ import {
   PGURI,
   REBALANCING_INTERVAL,
   REBALANCING_RATIOS,
+  REBALANCING_RATIO_INCREASING_RATE,
 } from './common/constants'
 import { pool } from './common/postgres'
 import { cancelOrder, getAssets, getMinuteCandles, getOrders, orderCoin } from './common/upbit'
@@ -16,7 +17,9 @@ import { UpbitCandle, UpbitOrderDetail } from './types/upbit'
 
 const marketCodes = MARKET_CODES.split(',')
 const targetRatios = REBALANCING_RATIOS.split(',').map((ratio) => +ratio)
-const minimumRebalancingGaps = Array(marketCodes.length).fill(+MINIMUM_REBALANCING_RATIO * 2)
+const minimumRebalancingGaps = Array(marketCodes.length).fill(
+  +MINIMUM_REBALANCING_RATIO * +REBALANCING_RATIO_INCREASING_RATE
+)
 
 if (marketCodes.length !== targetRatios.length)
   throw new Error('MARKET_CODES, REBALANCING_RATIOS 배열 길이가 다릅니다')
@@ -199,7 +202,7 @@ async function rebalanceAssets() {
     const coinCode_ = coinCode.padEnd(4, ' ')
     const gap = minimumRebalancingGap.toFixed(5)
     logWriter.write(`${printNow()} ${coinCode_} min_rebalance_gap: ${gap}\n`)
-    minimumRebalancingGaps[i] *= 1.3
+    minimumRebalancingGaps[i] *= +REBALANCING_RATIO_INCREASING_RATE
 
     // 최소 1시간마다 기록
     if (willCreateHistory) {
