@@ -142,7 +142,7 @@ async function rebalanceAssets() {
 
     if (Math.abs(ratioDiff) < minimumRebalancingGap) {
       if (minimumRebalancingGap > +MINIMUM_REBALANCING_RATIO) {
-        minimumRebalancingGaps[i] *= 0.98
+        minimumRebalancingGaps[i] *= 0.99
       } else {
         minimumRebalancingGaps[i] = +MINIMUM_REBALANCING_RATIO
       }
@@ -167,10 +167,10 @@ async function rebalanceAssets() {
 
       if (
         currAssetWaitingOrder.side === side &&
-        prevPrice > price * 0.95 &&
-        prevPrice < price * 1.05 &&
-        prevVolume > rawVolume * 0.95 &&
-        prevVolume < rawVolume * 1.05
+        prevPrice > price * 0.97 &&
+        prevPrice < price * 1.03 &&
+        prevVolume > rawVolume * 0.97 &&
+        prevVolume < rawVolume * 1.03
       ) {
         await Promise.all(canceledOrders)
         continue revalancing

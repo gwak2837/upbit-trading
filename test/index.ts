@@ -9,7 +9,7 @@ import getPreviousBalances from './getPreviousBalances.sql'
 
 async function main() {
   const result = await Promise.all([
-    pool.query(getPreviousBalances, ['2023-03-03 09:40:43.521252+00']),
+    pool.query(getPreviousBalances, ['2023-03-13 09:30:12.002124+00']),
     pool.query(getLastHistory),
   ])
 
