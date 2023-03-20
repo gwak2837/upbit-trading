@@ -167,10 +167,10 @@ async function rebalanceAssets() {
 
       if (
         currAssetWaitingOrder.side === side &&
-        prevPrice > price * 0.97 &&
-        prevPrice < price * 1.03 &&
-        prevVolume > rawVolume * 0.97 &&
-        prevVolume < rawVolume * 1.03
+        prevPrice > price * 0.98 &&
+        prevPrice < price * 1.02 &&
+        prevVolume > rawVolume * 0.98 &&
+        prevVolume < rawVolume * 1.02
       ) {
         await Promise.all(canceledOrders)
         continue revalancing
