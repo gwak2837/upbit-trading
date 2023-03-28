@@ -6,6 +6,7 @@ import {
   PGURI,
   REBALANCING_INTERVAL,
   REBALANCING_RATIOS,
+  REBALANCING_RATIO_DECREASING_RATE,
   REBALANCING_RATIO_INCREASING_RATE,
 } from './common/constants'
 import { pool } from './common/postgres'
@@ -142,7 +143,7 @@ async function rebalanceAssets() {
 
     if (Math.abs(ratioDiff) < minimumRebalancingGap) {
       if (minimumRebalancingGap > +MINIMUM_REBALANCING_RATIO) {
-        minimumRebalancingGaps[i] *= 0.99
+        minimumRebalancingGaps[i] *= +REBALANCING_RATIO_DECREASING_RATE
       } else {
         minimumRebalancingGaps[i] = +MINIMUM_REBALANCING_RATIO
       }
