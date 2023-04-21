@@ -143,8 +143,6 @@ dist
 # End of https://www.toptal.com/developers/gitignore/api/node
 
 /docs/*
-!/docs/chart.html
 .env*
-src/utils/options.ts
 *.crt
 *.key
