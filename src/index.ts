@@ -119,7 +119,7 @@ async function rebalanceAssets() {
     }
 
     const side = balanceDiff > 0 ? 'bid' : 'ask'
-    const volume = Math.abs(balanceDiff).toFixed(8)
+    const volume = (Math.abs(balanceDiff) * price).toFixed(8)
     const ord_type = side === 'bid' ? 'price' : 'market'
 
     if (NODE_ENV !== 'production') {
