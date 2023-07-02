@@ -14,14 +14,15 @@ import createAssetHistories from './createAssetHistories.sql'
 import { UpbitCandle, UpbitOrderDetail } from './types/upbit'
 
 const assetPairs = [
-  { coin1: 'KRW-MATIC', coin2: 'KRW-ADA', gap: 2 },
-  { coin1: 'KRW-BTC', coin2: 'KRW-XLM', gap: 2 },
-  { coin1: 'KRW-REP', coin2: 'KRW-XRP', gap: 2 },
-  { coin1: 'KRW-GAS', coin2: 'KRW-AXS', gap: 2 },
-  { coin1: 'KRW-NEO', coin2: 'KRW-AAVE', gap: 2 },
-  { coin1: 'KRW-AVAX', coin2: 'KRW-MTL', gap: 2 },
-] as const
+  { coin1: 'KRW-MATIC', coin2: 'KRW-ADA', gap: 2, increasingRate: 1.3, reductionRate: 0.98 },
+  { coin1: 'KRW-BTC', coin2: 'KRW-XLM', gap: 2, increasingRate: 1.3, reductionRate: 0.98 },
+  { coin1: 'KRW-REP', coin2: 'KRW-XRP', gap: 2, increasingRate: 1.3, reductionRate: 0.98 },
+  { coin1: 'KRW-GAS', coin2: 'KRW-AXS', gap: 2, increasingRate: 1.3, reductionRate: 0.98 },
+  { coin1: 'KRW-NEO', coin2: 'KRW-AAVE', gap: 2, increasingRate: 1.3, reductionRate: 0.98 },
+  { coin1: 'KRW-AVAX', coin2: 'KRW-MTL', gap: 2, increasingRate: 1.3, reductionRate: 0.98 },
+]
 
+const currentGaps = assetPairs.map((a) => a.gap)
 const marketCodes = assetPairs.map((assetPair) => [assetPair.coin1, assetPair.coin2]).flat()
 const coinCodes = marketCodes.map((marketCode) => marketCode.split('-')[1])
 const coinCount = coinCodes.length
@@ -48,7 +49,7 @@ async function rebalanceAssets() {
   const result = await Promise.all([
     getAssets(),
     ...marketCodes.map((market) => getMinuteCandles(1, { market })),
-    ...marketCodes.map((market) => getOrders({ market })),
+    // ...marketCodes.map((market) => getOrders({ market })),
   ])
 
   const assets = result[0]
@@ -59,10 +60,10 @@ async function rebalanceAssets() {
 
   const candles = rawCandles.filter((candle) => candle).flat()
 
-  const rawWaitingOrders = result.slice(coinCount + 1) as UpbitOrderDetail[][]
-  if (rawWaitingOrders.some((order) => order === null)) return
+  // const rawWaitingOrders = result.slice(coinCount + 1) as UpbitOrderDetail[][]
+  // if (rawWaitingOrders.some((order) => order === null)) return
 
-  const waitingOrders = rawWaitingOrders.filter((order) => order).flat()
+  // const waitingOrders = rawWaitingOrders.filter((order) => order).flat()
 
   // 자산별 평가금액 계산
   const coinStatistics: Record<string, any> = {}
@@ -104,18 +105,26 @@ async function rebalanceAssets() {
   // 리밸런싱
   for (let i = 0; i < coinCodes.length; i++) {
     const coinCode = coinCodes[i]
-    const { price, balance, value, ratio, balanceDiff, valueDiff, ratioDiff } =
-      coinStatistics[coinCode]
-    const assetPair = assetPairs[Math.floor(i / 2)]
+    const { price, balanceDiff, valueDiff, ratioDiff } = coinStatistics[coinCode]
+    const j = Math.floor(i / 2)
+    const assetPair = assetPairs[j]
 
     if (Math.abs(valueDiff) < +MINIMUM_REBALANCING_AMOUNT) {
       i++
       continue
     }
 
-    if (Math.abs(+ratioDiff) < assetPair.gap) {
+    if (Math.abs(ratioDiff) < currentGaps[j]) {
+      if (currentGaps[j] < assetPair.gap) {
+        currentGaps[j] = assetPair.gap
+      } else {
+        currentGaps[j] *= assetPair.reductionRate
+      }
+
       i++
       continue
+    } else {
+      currentGaps[j] *= assetPair.increasingRate
     }
 
     const side = balanceDiff > 0 ? 'bid' : 'ask'
@@ -127,7 +136,6 @@ async function rebalanceAssets() {
       continue
     }
 
-    // 주문
     await orderCoin({
       market: marketCodes[i],
       side,
@@ -136,37 +144,28 @@ async function rebalanceAssets() {
       ord_type,
     })
 
-    // 현재 자산 대기 주문 유지.삭제
-    // const canceledOrders = []
+    const coinCode_ = coinCode.padEnd(4, ' ')
+    const gap = currentGaps[j].toFixed(5)
+    logWriter.write(`${printNow()} ${coinCode_} rebalance_gap: ${gap}\n`)
 
-    // for (const currAssetWaitingOrder of allAssetsWaitingOrders[i]) {
-    //   const prevPrice = +currAssetWaitingOrder.price
-    //   const prevVolume = +currAssetWaitingOrder.volume
+    // 최소 1시간마다 기록
+    if (willCreateHistory) {
+      willCreateHistory = false
 
-    //   if (
-    //     currAssetWaitingOrder.side === side &&
-    //     prevPrice > price * 0.98 &&
-    //     prevPrice < price * 1.02 &&
-    //     prevVolume > rawVolume * 0.98 &&
-    //     prevVolume < rawVolume * 1.02
-    //   ) {
-    //     await Promise.all(canceledOrders)
-    //     continue revalancing
-    //   }
+      const statistics = Object.values(coinStatistics)
 
-    //   canceledOrders.push(cancelOrder(currAssetWaitingOrder.uuid))
-    // }
-
-    // // 다른 자산 대기 주문 유지.삭제
-    // for (let j = 0; j < allAssetsWaitingOrders.length; j++) {
-    //   if (j === i) continue
-
-    //   for (const otherAssetWaitingOrder of allAssetsWaitingOrders[j]) {
-    //     canceledOrders.push(cancelOrder(otherAssetWaitingOrder.uuid))
-    //   }
-    // }
-
-    // await Promise.all(canceledOrders)
+      pool
+        .query(createAssetHistories, [
+          Object.keys(coinStatistics),
+          statistics.map((stat) => stat.balance),
+          statistics.map((stat) => stat.price),
+        ])
+        .then(() =>
+          setTimeout(() => {
+            willCreateHistory = true
+          }, 3600_000)
+        )
+    }
   }
 
   // revalancing: for (let i = 0; i < coinCount; i++) {
@@ -248,29 +247,6 @@ async function rebalanceAssets() {
   //     volume,
   //   })
 
-  //   const coinCode_ = coinCode.padEnd(4, ' ')
-  //   const gap = minimumRebalancingGap.toFixed(5)
-  //   logWriter.write(`${printNow()} ${coinCode_} min_rebalance_gap: ${gap}\n`)
-  //   minimumRebalancingGaps[i] *= +REBALANCING_RATIO_INCREASING_RATE
-
-  //   // 최소 1시간마다 기록
-  //   if (willCreateHistory) {
-  //     willCreateHistory = false
-
-  //     const statistics = Object.values(coinStatistics)
-
-  //     pool
-  //       .query(createAssetHistories, [
-  //         Object.keys(coinStatistics),
-  //         statistics.map((stat) => stat.balance),
-  //         statistics.map((stat) => stat.price),
-  //       ])
-  //       .then(() =>
-  //         setTimeout(() => {
-  //           willCreateHistory = true
-  //         }, 3600_000)
-  //       )
-  //   }
   // }
 
   // 통계 기록
