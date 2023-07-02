@@ -3,23 +3,21 @@ import {
   NODE_ENV,
   PGURI,
   REBALANCING_INTERVAL,
-  REBALANCING_RATIO_DECREASING_RATE,
-  REBALANCING_RATIO_INCREASING_RATE,
 } from './common/constants'
 import { pool } from './common/postgres'
-import { cancelOrder, getAssets, getMinuteCandles, getOrders, orderCoin } from './common/upbit'
+import { getAssets, getMinuteCandles, orderCoin } from './common/upbit'
 import { addDecimal8, printNow, sleep } from './common/utils'
 import { logWriter } from './common/writer'
 import createAssetHistories from './createAssetHistories.sql'
-import { UpbitCandle, UpbitOrderDetail } from './types/upbit'
+import { UpbitCandle } from './types/upbit'
 
 const assetPairs = [
-  { coin1: 'KRW-MATIC', coin2: 'KRW-ADA', gap: 2, increasingRate: 1.3, reductionRate: 0.98 },
-  { coin1: 'KRW-BTC', coin2: 'KRW-XLM', gap: 2, increasingRate: 1.3, reductionRate: 0.98 },
-  { coin1: 'KRW-REP', coin2: 'KRW-XRP', gap: 2, increasingRate: 1.3, reductionRate: 0.98 },
-  { coin1: 'KRW-GAS', coin2: 'KRW-AXS', gap: 2, increasingRate: 1.3, reductionRate: 0.98 },
-  { coin1: 'KRW-NEO', coin2: 'KRW-AAVE', gap: 2, increasingRate: 1.3, reductionRate: 0.98 },
-  { coin1: 'KRW-AVAX', coin2: 'KRW-MTL', gap: 2, increasingRate: 1.3, reductionRate: 0.98 },
+  { coin1: 'KRW-MATIC', coin2: 'KRW-ADA', gap: 1, increasingRate: 1.3, reductionRate: 0.98 },
+  { coin1: 'KRW-BTC', coin2: 'KRW-XLM', gap: 1, increasingRate: 1.3, reductionRate: 0.98 },
+  { coin1: 'KRW-REP', coin2: 'KRW-XRP', gap: 1, increasingRate: 1.3, reductionRate: 0.98 },
+  { coin1: 'KRW-GAS', coin2: 'KRW-AXS', gap: 1, increasingRate: 1.3, reductionRate: 0.98 },
+  { coin1: 'KRW-NEO', coin2: 'KRW-AAVE', gap: 1, increasingRate: 1.3, reductionRate: 0.98 },
+  { coin1: 'KRW-AVAX', coin2: 'KRW-MTL', gap: 1, increasingRate: 1.3, reductionRate: 0.98 },
 ]
 
 const currentGaps = assetPairs.map((a) => a.gap)
@@ -28,21 +26,6 @@ const coinCodes = marketCodes.map((marketCode) => marketCode.split('-')[1])
 const coinCount = coinCodes.length
 
 let willCreateHistory = true
-
-type CoinStatistics = Record<
-  string,
-  {
-    price: number
-    balance: number
-    value: number
-    ratio: number
-    targetValue: number
-    targetRatio: number
-    balanceDiff: number
-    valueDiff?: number
-    ratioDiff?: number
-  }
->
 
 async function rebalanceAssets() {
   // 정보 불러오기
@@ -168,87 +151,6 @@ async function rebalanceAssets() {
     }
   }
 
-  // revalancing: for (let i = 0; i < coinCount; i++) {
-  //   // 리밸런싱 계산
-  //   const coinCode = coinCodes[i]
-  //   const coinStatistic = coinStatistics[coinCode]
-
-  //   const price = coinStatistic.price
-  //   const value = coinStatistic.value
-  //   const ratio = (coinStatistic.ratio = (100 * value) / totalCurrValue)
-
-  //   const targetRatio = coinStatistic.targetRatio
-  //   const targetValue = (coinStatistic.targetValue = (totalCurrValue * targetRatio) / 100)
-
-  //   const valueDiff = (coinStatistic.valueDiff = targetValue - value)
-  //   const balanceDiff = (coinStatistic.balanceDiff = valueDiff / price)
-  //   const ratioDiff = (coinStatistic.ratioDiff = targetRatio - ratio)
-
-  //   if (Math.abs(valueDiff) < +MINIMUM_REBALANCING_AMOUNT) continue
-
-  //   const minimumRebalancingGap = minimumRebalancingGaps[i]
-
-  //   if (Math.abs(ratioDiff) < minimumRebalancingGap) {
-  //     if (minimumRebalancingGap > +MINIMUM_REBALANCING_RATIO) {
-  //       minimumRebalancingGaps[i] *= +REBALANCING_RATIO_DECREASING_RATE
-  //     } else {
-  //       minimumRebalancingGaps[i] = +MINIMUM_REBALANCING_RATIO
-  //     }
-  //     continue
-  //   }
-
-  //   const side = balanceDiff > 0 ? 'bid' : 'ask'
-  //   const rawVolume = Math.abs(balanceDiff)
-  //   const volume = rawVolume.toFixed(8)
-
-  //   if (NODE_ENV !== 'production') {
-  //     console.log('👀 - order', coinCode, side, price, volume)
-  //     continue
-  //   }
-
-  //   // 현재 자산 대기 주문 유지.삭제
-  //   const canceledOrders = []
-
-  //   for (const currAssetWaitingOrder of allAssetsWaitingOrders[i]) {
-  //     const prevPrice = +currAssetWaitingOrder.price
-  //     const prevVolume = +currAssetWaitingOrder.volume
-
-  //     if (
-  //       currAssetWaitingOrder.side === side &&
-  //       prevPrice > price * 0.98 &&
-  //       prevPrice < price * 1.02 &&
-  //       prevVolume > rawVolume * 0.98 &&
-  //       prevVolume < rawVolume * 1.02
-  //     ) {
-  //       await Promise.all(canceledOrders)
-  //       continue revalancing
-  //     }
-
-  //     canceledOrders.push(cancelOrder(currAssetWaitingOrder.uuid))
-  //   }
-
-  //   // 다른 자산 대기 주문 유지.삭제
-  //   for (let j = 0; j < allAssetsWaitingOrders.length; j++) {
-  //     if (j === i) continue
-
-  //     for (const otherAssetWaitingOrder of allAssetsWaitingOrders[j]) {
-  //       canceledOrders.push(cancelOrder(otherAssetWaitingOrder.uuid))
-  //     }
-  //   }
-
-  //   await Promise.all(canceledOrders)
-
-  //   // 주문
-  //   await orderCoin({
-  //     market: marketCodes[i],
-  //     ord_type: 'limit',
-  //     side,
-  //     price: String(price),
-  //     volume,
-  //   })
-
-  // }
-
   // 통계 기록
   if (NODE_ENV !== 'production') {
     for (const coinCode in coinStatistics) {
@@ -291,3 +193,84 @@ pool
   .catch((error) => {
     throw new Error('Cannot connect to PostgreSQL server... \n' + error)
   })
+
+// revalancing: for (let i = 0; i < coinCount; i++) {
+//   // 리밸런싱 계산
+//   const coinCode = coinCodes[i]
+//   const coinStatistic = coinStatistics[coinCode]
+
+//   const price = coinStatistic.price
+//   const value = coinStatistic.value
+//   const ratio = (coinStatistic.ratio = (100 * value) / totalCurrValue)
+
+//   const targetRatio = coinStatistic.targetRatio
+//   const targetValue = (coinStatistic.targetValue = (totalCurrValue * targetRatio) / 100)
+
+//   const valueDiff = (coinStatistic.valueDiff = targetValue - value)
+//   const balanceDiff = (coinStatistic.balanceDiff = valueDiff / price)
+//   const ratioDiff = (coinStatistic.ratioDiff = targetRatio - ratio)
+
+//   if (Math.abs(valueDiff) < +MINIMUM_REBALANCING_AMOUNT) continue
+
+//   const minimumRebalancingGap = minimumRebalancingGaps[i]
+
+//   if (Math.abs(ratioDiff) < minimumRebalancingGap) {
+//     if (minimumRebalancingGap > +MINIMUM_REBALANCING_RATIO) {
+//       minimumRebalancingGaps[i] *= +REBALANCING_RATIO_DECREASING_RATE
+//     } else {
+//       minimumRebalancingGaps[i] = +MINIMUM_REBALANCING_RATIO
+//     }
+//     continue
+//   }
+
+//   const side = balanceDiff > 0 ? 'bid' : 'ask'
+//   const rawVolume = Math.abs(balanceDiff)
+//   const volume = rawVolume.toFixed(8)
+
+//   if (NODE_ENV !== 'production') {
+//     console.log('👀 - order', coinCode, side, price, volume)
+//     continue
+//   }
+
+//   // 현재 자산 대기 주문 유지.삭제
+//   const canceledOrders = []
+
+//   for (const currAssetWaitingOrder of allAssetsWaitingOrders[i]) {
+//     const prevPrice = +currAssetWaitingOrder.price
+//     const prevVolume = +currAssetWaitingOrder.volume
+
+//     if (
+//       currAssetWaitingOrder.side === side &&
+//       prevPrice > price * 0.98 &&
+//       prevPrice < price * 1.02 &&
+//       prevVolume > rawVolume * 0.98 &&
+//       prevVolume < rawVolume * 1.02
+//     ) {
+//       await Promise.all(canceledOrders)
+//       continue revalancing
+//     }
+
+//     canceledOrders.push(cancelOrder(currAssetWaitingOrder.uuid))
+//   }
+
+//   // 다른 자산 대기 주문 유지.삭제
+//   for (let j = 0; j < allAssetsWaitingOrders.length; j++) {
+//     if (j === i) continue
+
+//     for (const otherAssetWaitingOrder of allAssetsWaitingOrders[j]) {
+//       canceledOrders.push(cancelOrder(otherAssetWaitingOrder.uuid))
+//     }
+//   }
+
+//   await Promise.all(canceledOrders)
+
+//   // 주문
+//   await orderCoin({
+//     market: marketCodes[i],
+//     ord_type: 'limit',
+//     side,
+//     price: String(price),
+//     volume,
+//   })
+
+// }

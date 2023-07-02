@@ -8,18 +8,8 @@ export const NODE_ENV = process.env.NODE_ENV as string
 export const UPBIT_OPEN_API_ACCESS_KEY = process.env.UPBIT_OPEN_API_ACCESS_KEY as string
 export const UPBIT_OPEN_API_SECRET_KEY = process.env.UPBIT_OPEN_API_SECRET_KEY as string
 
-export const REBALANCING_RATIO_INCREASING_RATE = +(process.env
-  .REBALANCING_RATIO_INCREASING_RATE as string)
-export const REBALANCING_RATIO_DECREASING_RATE = +(process.env
-  .REBALANCING_RATIO_DECREASING_RATE as string)
-
 if (!UPBIT_OPEN_API_ACCESS_KEY) throw new Error('Requires UPBIT_OPEN_API_ACCESS_KEY')
 if (!UPBIT_OPEN_API_SECRET_KEY) throw new Error('Requires UPBIT_OPEN_API_SECRET_KEY')
-
-if (!REBALANCING_RATIO_INCREASING_RATE)
-  throw new Error('Requires REBALANCING_RATIO_INCREASING_RATE')
-if (!REBALANCING_RATIO_DECREASING_RATE)
-  throw new Error('Requires REBALANCING_RATIO_DECREASING_RATE')
 
 // 개별
 export const PGURI = process.env.PGURI as string
