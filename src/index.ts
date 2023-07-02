@@ -111,19 +111,20 @@ async function rebalanceAssets() {
     }
 
     const side = balanceDiff > 0 ? 'bid' : 'ask'
-    const volume = (Math.abs(balanceDiff) * price).toFixed(8)
+    const orderVolume = Math.abs(balanceDiff).toFixed(8)
+    const orderPrice = (Math.abs(balanceDiff) * price).toFixed(8)
     const ord_type = side === 'bid' ? 'price' : 'market'
 
     if (NODE_ENV !== 'production') {
-      console.log('👀 - order', coinCode, side, price, volume)
+      console.log('👀 - order', marketCodes[i], side, orderVolume, orderPrice, ord_type)
       continue
     }
 
     await orderCoin({
       market: marketCodes[i],
       side,
-      ...(side === 'ask' && { volume }),
-      ...(side === 'bid' && { price: String(price) }),
+      ...(side === 'ask' && { volume: orderVolume }),
+      ...(side === 'bid' && { price: orderPrice }),
       ord_type,
     })
 
