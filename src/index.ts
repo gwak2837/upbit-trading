@@ -12,12 +12,12 @@ import createAssetHistories from './createAssetHistories.sql'
 import { UpbitCandle } from './types/upbit'
 
 const assetPairs = [
-  { coin1: 'KRW-MATIC', coin2: 'KRW-ADA', gap: 1, increasingRate: 1.3, reductionRate: 0.98 },
-  { coin1: 'KRW-BTC', coin2: 'KRW-XLM', gap: 1, increasingRate: 1.3, reductionRate: 0.98 },
-  { coin1: 'KRW-REP', coin2: 'KRW-XRP', gap: 1, increasingRate: 1.3, reductionRate: 0.98 },
-  { coin1: 'KRW-GAS', coin2: 'KRW-AXS', gap: 1, increasingRate: 1.3, reductionRate: 0.98 },
-  { coin1: 'KRW-NEO', coin2: 'KRW-AAVE', gap: 1, increasingRate: 1.3, reductionRate: 0.98 },
-  { coin1: 'KRW-AVAX', coin2: 'KRW-MTL', gap: 1, increasingRate: 1.3, reductionRate: 0.98 },
+  { coin1: 'KRW-MATIC', coin2: 'KRW-ADA', gap: 1 },
+  { coin1: 'KRW-BTC', coin2: 'KRW-XLM', gap: 1 },
+  { coin1: 'KRW-REP', coin2: 'KRW-XRP', gap: 1 },
+  { coin1: 'KRW-GAS', coin2: 'KRW-AXS', gap: 1 },
+  { coin1: 'KRW-NEO', coin2: 'KRW-AAVE', gap: 1 },
+  { coin1: 'KRW-AVAX', coin2: 'KRW-MTL', gap: 1 },
 ]
 
 const currentGaps = assetPairs.map((a) => a.gap)
@@ -92,22 +92,9 @@ async function rebalanceAssets() {
     const j = Math.floor(i / 2)
     const assetPair = assetPairs[j]
 
-    if (Math.abs(valueDiff) < +MINIMUM_REBALANCING_AMOUNT) {
+    if (Math.abs(valueDiff) < +MINIMUM_REBALANCING_AMOUNT || Math.abs(ratioDiff) < currentGaps[j]) {
       i++
       continue
-    }
-
-    if (Math.abs(ratioDiff) < currentGaps[j]) {
-      if (currentGaps[j] < assetPair.gap) {
-        currentGaps[j] = assetPair.gap
-      } else {
-        currentGaps[j] *= assetPair.reductionRate
-      }
-
-      i++
-      continue
-    } else {
-      currentGaps[j] *= assetPair.increasingRate
     }
 
     const side = balanceDiff > 0 ? 'bid' : 'ask'
@@ -127,10 +114,6 @@ async function rebalanceAssets() {
       ...(side === 'bid' && { price: orderPrice }),
       ord_type,
     })
-
-    const coinCode_ = coinCode.padEnd(4, ' ')
-    const gap = currentGaps[j].toFixed(5)
-    logWriter.write(`${printNow()} ${coinCode_} rebalance_gap: ${gap}\n`)
 
     // 최소 1시간마다 기록
     if (willCreateHistory) {
