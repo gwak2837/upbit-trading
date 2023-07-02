@@ -14,12 +14,12 @@ import createAssetHistories from './createAssetHistories.sql'
 import { UpbitCandle, UpbitOrderDetail } from './types/upbit'
 
 const assetPairs = [
-  { coin1: 'KRW-MATIC', coin2: 'KRW-ADA', gap: 3 },
-  { coin1: 'KRW-BTC', coin2: 'KRW-XLM', gap: 3 },
-  { coin1: 'KRW-REP', coin2: 'KRW-XRP', gap: 3 },
-  { coin1: 'KRW-GAS', coin2: 'KRW-AXS', gap: 3 },
-  { coin1: 'KRW-NEO', coin2: 'KRW-AAVE', gap: 3 },
-  { coin1: 'KRW-AVAX', coin2: 'KRW-MTL', gap: 3 },
+  { coin1: 'KRW-MATIC', coin2: 'KRW-ADA', gap: 2 },
+  { coin1: 'KRW-BTC', coin2: 'KRW-XLM', gap: 2 },
+  { coin1: 'KRW-REP', coin2: 'KRW-XRP', gap: 2 },
+  { coin1: 'KRW-GAS', coin2: 'KRW-AXS', gap: 2 },
+  { coin1: 'KRW-NEO', coin2: 'KRW-AAVE', gap: 2 },
+  { coin1: 'KRW-AVAX', coin2: 'KRW-MTL', gap: 2 },
 ] as const
 
 const marketCodes = assetPairs.map((assetPair) => [assetPair.coin1, assetPair.coin2]).flat()

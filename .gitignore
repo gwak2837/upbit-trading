@@ -146,3 +146,5 @@ dist
 .env*
 *.crt
 *.key
+out/dev.cjs
+out/test.cjs
