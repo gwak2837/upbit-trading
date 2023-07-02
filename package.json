@@ -15,7 +15,7 @@
     "dev": "src/dev.sh",
     "build": "NODE_ENV=production node esbuild.js",
     "start": "NODE_ENV=production node -r dotenv/config out/index.cjs dotenv_config_path=.env",
-    "test": "NODE_ENV=production node esbuild.test.js && NODE_ENV=production node -r dotenv/config out/index.cjs dotenv_config_path=.env.development.local",
+    "test": "NODE_ENV=production node esbuild.test.js && NODE_ENV=production node -r dotenv/config out/test.cjs dotenv_config_path=.env.development.local",
     "format": "prettier . --write --ignore-path .gitignore",
     "lint": "eslint . --fix --ignore-path .gitignore",
     "type": "tsc --pretty --noEmit",

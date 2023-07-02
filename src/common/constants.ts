@@ -1,28 +1,21 @@
-export const MAXIMUM_CONCURRENT_REQUEST = 7
+export const UPBIT_API_URL = 'https://api.upbit.com'
+export const MAXIMUM_CONCURRENT_REQUEST = 6
+export const REBALANCING_INTERVAL = 10_000
+export const MINIMUM_REBALANCING_AMOUNT = 5005
+
 export const NODE_ENV = process.env.NODE_ENV as string
 
-export const UPBIT_API_URL = 'https://api.upbit.com'
 export const UPBIT_OPEN_API_ACCESS_KEY = process.env.UPBIT_OPEN_API_ACCESS_KEY as string
 export const UPBIT_OPEN_API_SECRET_KEY = process.env.UPBIT_OPEN_API_SECRET_KEY as string
 
-export const MARKET_CODES = process.env.MARKET_CODES as string
-export const REBALANCING_RATIOS = process.env.REBALANCING_RATIOS as string
-export const REBALANCING_INTERVAL = process.env.REBALANCING_INTERVAL as string
-export const MINIMUM_REBALANCING_AMOUNT = process.env.MINIMUM_REBALANCING_AMOUNT as string
-export const MINIMUM_REBALANCING_RATIO = process.env.MINIMUM_REBALANCING_RATIO as string
-export const REBALANCING_RATIO_INCREASING_RATE = process.env
-  .REBALANCING_RATIO_INCREASING_RATE as string
-export const REBALANCING_RATIO_DECREASING_RATE = process.env
-  .REBALANCING_RATIO_DECREASING_RATE as string
+export const REBALANCING_RATIO_INCREASING_RATE = +(process.env
+  .REBALANCING_RATIO_INCREASING_RATE as string)
+export const REBALANCING_RATIO_DECREASING_RATE = +(process.env
+  .REBALANCING_RATIO_DECREASING_RATE as string)
 
 if (!UPBIT_OPEN_API_ACCESS_KEY) throw new Error('Requires UPBIT_OPEN_API_ACCESS_KEY')
 if (!UPBIT_OPEN_API_SECRET_KEY) throw new Error('Requires UPBIT_OPEN_API_SECRET_KEY')
 
-if (!MARKET_CODES) throw new Error('Requires MARKET_CODES')
-if (!REBALANCING_RATIOS) throw new Error('Requires REBALANCING_RATIOS')
-if (!REBALANCING_INTERVAL) throw new Error('Requires REBALANCING_INTERVAL')
-if (!MINIMUM_REBALANCING_AMOUNT) throw new Error('Requires MINIMUM_REBALANCING_AMOUNT')
-if (!MINIMUM_REBALANCING_RATIO) throw new Error('Requires MINIMUM_REBALANCING_RATIO')
 if (!REBALANCING_RATIO_INCREASING_RATE)
   throw new Error('Requires REBALANCING_RATIO_INCREASING_RATE')
 if (!REBALANCING_RATIO_DECREASING_RATE)

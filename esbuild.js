@@ -12,7 +12,7 @@ esbuild
     loader: { '.sql': 'text' },
     metafile: true,
     minify: NODE_ENV === 'production',
-    outfile: 'out/index.cjs',
+    outfile: NODE_ENV === 'production' ? 'out/index.cjs' : 'out/dev.cjs',
     platform: 'node',
     target: ['node18'],
     treeShaking: true,

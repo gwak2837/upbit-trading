@@ -6,6 +6,14 @@ export type Asset = {
   avg_buy_price_modified: boolean
   unit_currency: string
 }
+// {
+//   currency: 'NEO',
+//   balance: '70.52441809',
+//   locked: '0',
+//   avg_buy_price: '13758.5526',
+//   avg_buy_price_modified: false,
+//   unit_currency: 'KRW'
+// },
 
 export type UpbitDeposit = {
   type: string
@@ -33,6 +41,19 @@ export type UpbitCandle = {
   candle_acc_trade_volume: number
   first_day_of_period: string
 }
+// {
+//   market: 'KRW-MATIC',
+//   candle_date_time_utc: '2023-06-27T05:28:00',
+//   candle_date_time_kst: '2023-06-27T14:28:00',
+//   opening_price: 866,
+//   high_price: 866,
+//   low_price: 866,
+//   trade_price: 866,
+//   timestamp: 1687843682999,
+//   candle_acc_trade_price: 137315.51359152,
+//   candle_acc_trade_volume: 158.56294872,
+//   unit: 1
+// }
 
 export interface UpbitOrder {
   uuid: string
