@@ -12,12 +12,12 @@ import createAssetHistories from './createAssetHistories.sql'
 import { UpbitCandle } from './types/upbit'
 
 const assetPairs = [
-  { coin1: 'KRW-MATIC', coin2: 'KRW-ADA', gap: 1 },
-  { coin1: 'KRW-BTC', coin2: 'KRW-XLM', gap: 1 },
-  { coin1: 'KRW-SOL', coin2: 'KRW-XRP', gap: 1 },
-  { coin1: 'KRW-GAS', coin2: 'KRW-AXS', gap: 1 },
-  { coin1: 'KRW-NEO', coin2: 'KRW-AAVE', gap: 1 },
-  { coin1: 'KRW-AVAX', coin2: 'KRW-MTL', gap: 1 },
+  { coin1: 'KRW-MATIC', coin2: 'KRW-ADA', gap: 0.6 },
+  { coin1: 'KRW-BTC', coin2: 'KRW-XLM', gap: 0.6 },
+  { coin1: 'KRW-SOL', coin2: 'KRW-XRP', gap: 0.6 },
+  { coin1: 'KRW-GAS', coin2: 'KRW-AXS', gap: 0.6 },
+  { coin1: 'KRW-NEO', coin2: 'KRW-AAVE', gap: 0.6 },
+  { coin1: 'KRW-AVAX', coin2: 'KRW-MTL', gap: 0.6 },
 ]
 
 const currentGaps = assetPairs.map((a) => a.gap)
