@@ -4,4 +4,4 @@ SELECT creation_time,
   price
 FROM history
 ORDER BY id DESC
-LIMIT 13;
+LIMIT 12;

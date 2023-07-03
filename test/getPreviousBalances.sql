@@ -4,4 +4,4 @@ SELECT creation_time,
   price
 FROM history
 WHERE creation_time > $1
-LIMIT 13;
+LIMIT 12;
