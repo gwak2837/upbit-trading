@@ -82,7 +82,7 @@ export interface UpbitOrderDetail extends UpbitOrder {
       volume: string
       funds: string
       side: string
-    }
+    },
   ]
 }
 

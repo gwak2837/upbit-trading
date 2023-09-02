@@ -27,14 +27,14 @@ function createToken(query?: string) {
           query_hash: createHash('sha512').update(query, 'utf-8').digest('hex'),
           query_hash_alg: 'SHA512',
         },
-        UPBIT_OPEN_API_SECRET_KEY
+        UPBIT_OPEN_API_SECRET_KEY,
       )
     : sign(
         {
           access_key: UPBIT_OPEN_API_ACCESS_KEY,
           nonce: uuidv4(),
         },
-        UPBIT_OPEN_API_SECRET_KEY
+        UPBIT_OPEN_API_SECRET_KEY,
       )
 }
 
@@ -83,7 +83,7 @@ export async function getMinuteCandles(unit: number, body: MinuteCandleInput) {
 
   if (!response.ok) {
     logWriter.write(
-      `${printNow()} getMinuteCandles, ${JSON.stringify(body)}, ${await response.text()}\n`
+      `${printNow()} getMinuteCandles, ${JSON.stringify(body)}, ${await response.text()}\n`,
     )
     return null
   }

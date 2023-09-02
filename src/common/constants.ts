@@ -1,6 +1,6 @@
 export const UPBIT_API_URL = 'https://api.upbit.com'
 export const MAXIMUM_CONCURRENT_REQUEST = 5
-export const REBALANCING_INTERVAL = 60_000
+export const REBALANCING_INTERVAL = 30_000
 export const MINIMUM_REBALANCING_AMOUNT = 5005
 
 export const NODE_ENV = process.env.NODE_ENV as string

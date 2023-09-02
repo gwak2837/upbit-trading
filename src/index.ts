@@ -15,9 +15,9 @@ const assetPairs = [
   { coin1: 'KRW-MATIC', coin2: 'KRW-ADA', gap: 3 },
   { coin1: 'KRW-BTC', coin2: 'KRW-XLM', gap: 2.5 },
   { coin1: 'KRW-SOL', coin2: 'KRW-XRP', gap: 2 },
-  { coin1: 'KRW-GAS', coin2: 'KRW-AXS', gap: 1.5 },
-  { coin1: 'KRW-NEO', coin2: 'KRW-AAVE', gap: 0.5 },
-  { coin1: 'KRW-AVAX', coin2: 'KRW-MTL', gap: 1 },
+  { coin1: 'KRW-GAS', coin2: 'KRW-AXS', gap: 2.5 },
+  { coin1: 'KRW-NEO', coin2: 'KRW-AAVE', gap: 2 },
+  { coin1: 'KRW-AVAX', coin2: 'KRW-MTL', gap: 2 },
 ]
 
 const currentGaps = assetPairs.map((a) => a.gap)
@@ -130,7 +130,7 @@ async function rebalanceAssets() {
         .then(() =>
           setTimeout(() => {
             willCreateHistory = true
-          }, 3600_000)
+          }, 3600_000),
         )
     }
   }
@@ -171,8 +171,8 @@ pool
   .query('SELECT CURRENT_TIMESTAMP')
   .then(({ rows }) =>
     console.log(
-      `🚅 Connected to ${PGURI} at ${new Date(rows[0].current_timestamp).toLocaleString()}`
-    )
+      `🚅 Connected to ${PGURI} at ${new Date(rows[0].current_timestamp).toLocaleString()}`,
+    ),
   )
   .catch((error) => {
     throw new Error('Cannot connect to PostgreSQL server... \n' + error)
